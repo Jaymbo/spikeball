@@ -1,0 +1,18 @@
+[Unit]
+Description=Spikeball Next.js App
+After=network.target
+
+[Service]
+Type=simple
+User=server2
+WorkingDirectory=/home/server2/spikeball
+Environment=NODE_ENV=production
+Environment=DATABASE_URL=file:/home/server2/spikeball/db/custom.db
+ExecStart=/usr/bin/npm run start:service
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

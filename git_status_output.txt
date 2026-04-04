@@ -1,0 +1,35 @@
+On branch master
+
+No commits yet
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	.continue/
+	.github/
+	.gitignore
+	.vscode/
+	.zscripts/
+	Caddyfile
+	DEPLOYMENT.md
+	FIXES.md
+	bun.lock
+	components.json
+	db/
+	eslint.config.mjs
+	examples/
+	git_status_output.txt
+	mini-services/
+	next.config.js
+	package-lock.json
+	package.json
+	postcss.config.js
+	prisma/
+	public/
+	spikeball.service
+	src/
+	tailwind.config.js
+	tsconfig.json
+	worklog.md
+	workspace-02faedde-28b0-4de5-b4f4-2ab47bd90111.tar
+
+nothing added to commit but untracked files present (use "git add" to track)
