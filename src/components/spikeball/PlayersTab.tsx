@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Plus, Trash2, UserPlus, Check, X, Pencil, KeyRound } from "lucide-react";
+import { Plus, Trash2, UserPlus, Check, X, Pencil, KeyRound, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import SearchInput from "@/components/ui/search-input";
 
 interface Player {
   id: string;
@@ -41,6 +42,12 @@ export default function PlayersTab({ players, onPlayersChange, isAdmin, currentU
   const [editPlayerName, setEditPlayerName] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
   const [resetLoadingId, setResetLoadingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredPlayers = players.filter(
+    (player) =>
+      player.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const addPlayer = async () => {
     if (!isAdmin) {
@@ -206,18 +213,35 @@ export default function PlayersTab({ players, onPlayersChange, isAdmin, currentU
                 ({players.length})
               </span>
             </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onPlayersChange}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Neuladen
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {players.length === 0 ? (
+          {/* Search Input */}
+          <div className="p-4 border-b">
+            <SearchInput
+              placeholder="Nach Spielername suchen..."
+              onSearch={setSearchQuery}
+            />
+          </div>
+
+          {filteredPlayers.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
               <UserPlus className="h-10 w-10 mx-auto mb-3 opacity-50" />
-              <p>Noch keine Spieler vorhanden</p>
-              <p className="text-sm mt-1">Füge oben einen neuen Spieler hinzu.</p>
+              <p>{searchQuery ? `Keine Ergebnisse für "${searchQuery}"` : "Noch keine Spieler vorhanden"}</p>
+              <p className="text-sm mt-1">{searchQuery ? "Versuche einen anderen Suchbegriff." : "Füge oben einen neuen Spieler hinzu."}</p>
             </div>
           ) : (
             <div className="max-h-[400px] overflow-y-auto">
-              {players.map((player, index) => (
+              {filteredPlayers.map((player, index) => (
                 (() => {
                   const canEdit = isAdmin || (currentUsername && currentUsername === player.name);
 

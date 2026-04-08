@@ -24,12 +24,13 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { ChangePasswordDialog } from "@/components/auth/ChangePasswordDialog";
 import { toast } from "sonner";
 import Leaderboard from "@/components/spikeball/Leaderboard";
-import PlayersTab from "@/components/spikeball/PlayersTab";
+import PlayersTabUpdated from "@/components/spikeball/PlayersTabUpdated";
 import RecordGame from "@/components/spikeball/RecordGame";
 import GenerateGames from "@/components/spikeball/GenerateGames";
 import GameHistory from "@/components/spikeball/GameHistory";
 import AdminTools from "@/components/spikeball/AdminTools";
 import { FriendsTab } from "@/components/friends/FriendsTab";
+import { Badge } from "@/components/ui/badge";
 
 interface Player {
   id: string;
@@ -60,6 +61,7 @@ export default function SpikeballPage() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [themeReady, setThemeReady] = useState(false);
+  const [pendingFriendRequests, setPendingFriendRequests] = useState(0);
 
   useEffect(() => {
     setThemeReady(true);
@@ -94,6 +96,20 @@ export default function SpikeballPage() {
     }
   }, []);
 
+  // Fetch pending friend requests count
+  const fetchPendingFriendRequests = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await fetch("/api/friends/pending-count");
+      if (res.ok) {
+        const data = await res.json();
+        setPendingFriendRequests(data.count);
+      }
+    } catch (error) {
+      console.error("Error fetching pending friend requests:", error);
+    }
+  }, [user]);
+
   // Check auth on mount and when page becomes visible
   useEffect(() => {
     refreshAuth();
@@ -102,12 +118,21 @@ export default function SpikeballPage() {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         refreshAuth();
+        fetchPendingFriendRequests();
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [refreshAuth]);
+  }, [refreshAuth, fetchPendingFriendRequests]);
+
+  // Fetch pending friend requests periodically
+  useEffect(() => {
+    if (!user) return;
+    fetchPendingFriendRequests();
+    const interval = setInterval(fetchPendingFriendRequests, 30000); // Check every 30 seconds
+    return () => clearInterval(interval);
+  }, [user, fetchPendingFriendRequests]);
 
   const fetchPlayers = useCallback(async () => {
     try {
@@ -154,6 +179,7 @@ export default function SpikeballPage() {
       credentials: 'include',
     });
     setUser(null);
+    setPendingFriendRequests(0);
     toast.success("Erfolgreich abgemeldet");
   };
 
@@ -320,13 +346,18 @@ export default function SpikeballPage() {
                 >
                   <Icon className="h-4 w-4" />
                   {tab.label}
+                  {tab.value === "friends" && pendingFriendRequests > 0 && (
+                    <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
+                      {pendingFriendRequests}
+                    </Badge>
+                  )}
                 </TabsTrigger>
               );
             })}
           </TabsList>
 
           <TabsContent value="leaderboard" className="mt-6">
-            <Leaderboard onRefreshTrigger={refreshTrigger} />
+            <Leaderboard onRefreshTrigger={refreshTrigger} currentUser={user} />
           </TabsContent>
 
           <TabsContent value="record" className="mt-6">
@@ -394,7 +425,7 @@ export default function SpikeballPage() {
 
           <TabsContent value="players" className="mt-6">
             {user ? (
-              <PlayersTab
+              <PlayersTabUpdated
                 players={players}
                 onPlayersChange={handlePlayersChange}
                 isAdmin={user.isAdmin}

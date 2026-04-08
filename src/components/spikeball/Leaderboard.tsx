@@ -9,11 +9,15 @@ import {
   Minus,
   Gamepad2,
   User,
+  RefreshCw,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import SearchInput from "@/components/ui/search-input";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { PlayerProfile } from "@/components/profile/PlayerProfile";
 
 interface LeaderboardEntry {
   rank: number;
@@ -28,8 +32,15 @@ interface LeaderboardEntry {
   createdAt: string;
 }
 
+interface CurrentUser {
+  userId: string;
+  username: string;
+  isAdmin: boolean;
+}
+
 interface LeaderboardProps {
   onRefreshTrigger: number;
+  currentUser?: CurrentUser | null;
 }
 
 function getRankIcon(rank: number) {
@@ -68,9 +79,18 @@ function getLastPlayedText(lastPlayedAt: string | null): string {
   return `Vor ${Math.floor(diffDays / 365)} Jahren`;
 }
 
-export default function Leaderboard({ onRefreshTrigger }: LeaderboardProps) {
+export default function Leaderboard({ onRefreshTrigger, currentUser }: LeaderboardProps) {
   const [players, setPlayers] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
+  const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
+
+  const filteredPlayers = players.filter(
+    (player) =>
+      player.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -89,9 +109,34 @@ export default function Leaderboard({ onRefreshTrigger }: LeaderboardProps) {
     }
   }, []);
 
+  const fetchCurrentPlayer = useCallback(async () => {
+    if (!currentUser) {
+      setCurrentPlayerId(null);
+      return;
+    }
+    try {
+      const res = await fetch("/api/players/current-player");
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentPlayerId(data.currentPlayerId);
+      }
+    } catch (err) {
+      console.error("Error fetching current player:", err);
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     fetchLeaderboard();
   }, [fetchLeaderboard, onRefreshTrigger]);
+
+  useEffect(() => {
+    fetchCurrentPlayer();
+  }, [fetchCurrentPlayer]);
+
+  const handleProfileClick = (playerId: string) => {
+    setSelectedPlayerId(playerId);
+    setProfileDialogOpen(true);
+  };
 
   if (loading && players.length === 0) {
     return (
@@ -112,16 +157,43 @@ export default function Leaderboard({ onRefreshTrigger }: LeaderboardProps) {
     );
   }
 
-  const topThree = players.slice(0, 3);
-  const rest = players.slice(3);
+  const topThree = filteredPlayers.slice(0, 3);
+  const rest = filteredPlayers.slice(3);
 
   return (
     <div className="space-y-6">
+      {/* Search and Refresh */}
+      <div className="flex gap-2">
+        {currentPlayerId && (
+          <Button
+            variant="outline"
+            onClick={() => handleProfileClick(currentPlayerId)}
+            className="shrink-0"
+          >
+            <User className="h-4 w-4 mr-2" />
+            Mein Profil
+          </Button>
+        )}
+        <SearchInput
+          placeholder="Nach Spielername suchen..."
+          onSearch={setSearchQuery}
+          className="flex-1"
+        />
+        <Button
+          size="icon"
+          variant="outline"
+          onClick={fetchLeaderboard}
+          className="shrink-0"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </div>
+
       {/* Top 3 Podium */}
       {topThree.length >= 1 && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* 1st Place - Center */}
-          <Card className="sm:order-2 border-yellow-300 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30">
+          <Card className="sm:order-2 border-yellow-300 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProfileClick(topThree[0]?.id)}>
             <CardContent className="flex flex-col items-center pt-6">
               <div className="relative">
                 <Trophy className="h-10 w-10 text-yellow-500 mb-2" />
@@ -146,7 +218,7 @@ export default function Leaderboard({ onRefreshTrigger }: LeaderboardProps) {
 
           {/* 2nd Place - Left */}
           {topThree.length >= 2 && (
-            <Card className="sm:order-1 border-gray-300 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/30 dark:to-slate-900/30">
+            <Card className="sm:order-1 border-gray-300 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/30 dark:to-slate-900/30 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProfileClick(topThree[1]?.id)}>
               <CardContent className="flex flex-col items-center pt-6">
                 <Medal className="h-10 w-10 text-gray-400 mb-2" />
                 <h3 className="text-lg font-bold">{topThree[1]?.name}</h3>
@@ -170,7 +242,7 @@ export default function Leaderboard({ onRefreshTrigger }: LeaderboardProps) {
 
           {/* 3rd Place - Right */}
           {topThree.length >= 3 && (
-            <Card className="sm:order-3 border-amber-300 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30">
+            <Card className="sm:order-3 border-amber-300 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProfileClick(topThree[2]?.id)}>
               <CardContent className="flex flex-col items-center pt-6">
                 <Medal className="h-10 w-10 text-amber-600 mb-2" />
                 <h3 className="text-lg font-bold">{topThree[2]?.name}</h3>
@@ -207,7 +279,7 @@ export default function Leaderboard({ onRefreshTrigger }: LeaderboardProps) {
                 return (
                   <div
                     key={player.id}
-                    className="flex items-center gap-4 px-6 py-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors"
+                    className="flex items-center gap-4 px-6 py-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => handleProfileClick(player.id)}
                   >
                     <div className="w-8 flex items-center justify-center">
                       {getRankIcon(player.rank)}
@@ -274,6 +346,20 @@ export default function Leaderboard({ onRefreshTrigger }: LeaderboardProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Profile Dialog */}
+      <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          {selectedPlayerId && (
+            <PlayerProfile 
+              playerId={selectedPlayerId} 
+              isOwnProfile={selectedPlayerId === currentPlayerId}
+              isAdmin={currentUser?.isAdmin || false}
+              onClose={() => setProfileDialogOpen(false)} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

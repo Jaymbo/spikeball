@@ -2,16 +2,3 @@ name: New MCP server
 version: 0.0.1
 schema: v1
 mcpServers:
-  - name: git-agent
-    command: npx
-    args:
-      - -y
-      - mcp-server-git  # <--- Das ist der Paketname (ohne @scope)
-    env: {}
-  - name: filesystem
-    command: npx
-    args:
-      - -y
-      - "@modelcontextprotocol/server-filesystem"
-      - "/home/server2/spikeball"
-    env: {}

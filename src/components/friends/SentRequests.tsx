@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { UserCheck, UserX, Clock, RefreshCw } from "lucide-react";
+import { Clock, X, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import SearchInput from "@/components/ui/search-input";
 
-interface FriendRequest {
+interface SentRequest {
   id: string;
   username: string;
   playerName: string | null;
@@ -15,14 +16,13 @@ interface FriendRequest {
   createdAt: string;
 }
 
-interface FriendRequestsProps {
+interface SentRequestsProps {
   refreshTrigger?: number;
   onRefresh?: () => void;
-  onPendingCountChange?: (count: number) => void;
 }
 
-export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange }: FriendRequestsProps) {
-  const [requests, setRequests] = useState<FriendRequest[]>([]);
+export function SentRequests({ refreshTrigger, onRefresh }: SentRequestsProps) {
+  const [requests, setRequests] = useState<SentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -32,61 +32,35 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
 
   const fetchRequests = async () => {
     try {
-      const res = await fetch("/api/friends/requests");
+      const res = await fetch("/api/friends/sent");
       if (res.ok) {
         const data = await res.json();
         setRequests(data);
-        onPendingCountChange?.(data.length);
       }
     } catch (error) {
-      console.error("Error fetching friend requests:", error);
+      console.error("Error fetching sent friend requests:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAccept = async (id: string) => {
-    try {
-      const res = await fetch(`/api/friends/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "accept" }),
-      });
-
-      if (res.ok) {
-        toast.success("Freundschaft akzeptiert!");
-        const updated = requests.filter((r) => r.id !== id);
-        setRequests(updated);
-        onPendingCountChange?.(updated.length);
-        onRefresh?.();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Fehler beim Akzeptieren");
-      }
-    } catch (error) {
-      console.error("Error accepting friend request:", error);
-      toast.error("Fehler beim Akzeptieren");
-    }
-  };
-
-  const handleReject = async (id: string) => {
+  const handleCancel = async (id: string) => {
     try {
       const res = await fetch(`/api/friends/${id}`, {
         method: "DELETE",
       });
 
       if (res.ok) {
-        toast.success("Anfrage abgelehnt");
-        const updated = requests.filter((r) => r.id !== id);
-        setRequests(updated);
-        onPendingCountChange?.(updated.length);
+        toast.success("Anfrage abgebrochen");
+        setRequests((prev) => prev.filter((r) => r.id !== id));
+        onRefresh?.();
       } else {
         const data = await res.json();
-        toast.error(data.error || "Fehler beim Ablehnen");
+        toast.error(data.error || "Fehler beim Abbrechen");
       }
     } catch (error) {
-      console.error("Error rejecting friend request:", error);
-      toast.error("Fehler beim Ablehnen");
+      console.error("Error canceling friend request:", error);
+      toast.error("Fehler beim Abbrechen");
     }
   };
 
@@ -147,31 +121,28 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
           <Card key={request.id} className="p-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex-1">
-                <p className="font-medium">{request.username}</p>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">{request.username}</p>
+                  <Badge variant="secondary" className="text-xs">
+                    Ausstehend
+                  </Badge>
+                </div>
                 {request.playerName && (
                   <p className="text-sm text-muted-foreground">
                     Spieler: {request.playerName}
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground mt-1">
-                  {new Date(request.createdAt).toLocaleDateString("de-DE")}
+                  Gesendet am {new Date(request.createdAt).toLocaleDateString("de-DE")}
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleReject(request.id)}
-                >
-                  <UserX className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleAccept(request.id)}
-                >
-                  <UserCheck className="h-4 w-4" />
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleCancel(request.id)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
           </Card>
         ))

@@ -1,0 +1,187 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db } from '@/lib/db';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const playerId = params.id;
+    
+    // Validation
+    if (!playerId || typeof playerId !== 'string') {
+      console.error("[PlayerProfileAPI] Invalid playerId:", playerId);
+      return NextResponse.json({ error: "Invalid playerId" }, { status: 400 });
+    }
+
+    console.log(`[PlayerProfileAPI] Fetching data for player: ${playerId}`);
+
+    const player = await db.player.findUnique({
+      where: { id: playerId },
+      include: {
+        eloChanges: {
+          orderBy: { createdAt: "desc" },
+          take: 100,
+          include: {
+            game: {
+              include: {
+                team1Player1: true,
+                team1Player2: true,
+                team2Player1: true,
+                team2Player2: true,
+              },
+            },
+          },
+        },
+        gamesTeam1P1: {
+          orderBy: { playedAt: "desc" },
+          take: 50,
+          include: {
+            team1Player1: true,
+            team1Player2: true,
+            team2Player1: true,
+            team2Player2: true,
+          },
+        },
+        gamesTeam1P2: {
+          orderBy: { playedAt: "desc" },
+          take: 50,
+          include: {
+            team1Player1: true,
+            team1Player2: true,
+            team2Player1: true,
+            team2Player2: true,
+          },
+        },
+        gamesTeam2P1: {
+          orderBy: { playedAt: "desc" },
+          take: 50,
+          include: {
+            team1Player1: true,
+            team1Player2: true,
+            team2Player1: true,
+            team2Player2: true,
+          },
+        },
+        gamesTeam2P2: {
+          orderBy: { playedAt: "desc" },
+          take: 50,
+          include: {
+            team1Player1: true,
+            team1Player2: true,
+            team2Player1: true,
+            team2Player2: true,
+          },
+        },
+      },
+    });
+
+    if (!player) {
+      console.log(`[PlayerProfileAPI] Player not found: ${playerId}`);
+      return NextResponse.json({ error: "Player not found" }, { status: 404 });
+    }
+
+    // Combine all games and sort by playedAt
+    const allGames = [
+      ...player.gamesTeam1P1,
+      ...player.gamesTeam1P2,
+      ...player.gamesTeam2P1,
+      ...player.gamesTeam2P2,
+    ].sort((a, b) => new Date(b.playedAt).getTime() - new Date(a.playedAt).getTime());
+
+    // Remove duplicates
+    const uniqueGames = allGames.filter(
+      (game, index, self) => index === self.findIndex((g) => g.id === game.id)
+    );
+
+    console.log(`[PlayerProfileAPI] Found ${uniqueGames.length} unique games for ${playerId}`);
+
+    // Shape data with proper type conversions
+    return NextResponse.json({
+      player: {
+        id: player.id,
+        name: player.name,
+        eloRating: Number(player.eloRating),
+        gamesPlayed: player.gamesPlayed,
+        wins: player.wins,
+        losses: player.losses,
+        profilePicture: player.profilePicture || null,
+        createdAt: player.createdAt.toISOString(),
+        lastPlayedAt: player.lastPlayedAt ? player.lastPlayedAt.toISOString() : null,
+      },
+      eloHistory: player.eloChanges.map((change) => ({
+        id: change.id,
+        previousRating: Number(change.previousRating),
+        newRating: Number(change.newRating),
+        change: Number(change.change),
+        createdAt: change.createdAt.toISOString(),
+        game: change.game ? {
+          id: change.game.id,
+          team1Player1: {
+            id: change.game.team1Player1.id,
+            name: change.game.team1Player1.name,
+            eloRating: Number(change.game.team1Player1.eloRating),
+            profilePicture: change.game.team1Player1.profilePicture || null,
+          },
+          team1Player2: {
+            id: change.game.team1Player2.id,
+            name: change.game.team1Player2.name,
+            eloRating: Number(change.game.team1Player2.eloRating),
+            profilePicture: change.game.team1Player2.profilePicture || null,
+          },
+          team2Player1: {
+            id: change.game.team2Player1.id,
+            name: change.game.team2Player1.name,
+            eloRating: Number(change.game.team2Player1.eloRating),
+            profilePicture: change.game.team2Player1.profilePicture || null,
+          },
+          team2Player2: {
+            id: change.game.team2Player2.id,
+            name: change.game.team2Player2.name,
+            eloRating: Number(change.game.team2Player2.eloRating),
+            profilePicture: change.game.team2Player2.profilePicture || null,
+          },
+          team1Score: change.game.team1Score,
+          team2Score: change.game.team2Score,
+          playedAt: change.game.playedAt.toISOString(),
+        } : null,
+      })),
+      gameHistory: uniqueGames.map((game) => ({
+        id: game.id,
+        team1Player1: {
+          id: game.team1Player1.id,
+          name: game.team1Player1.name,
+          eloRating: Number(game.team1Player1.eloRating),
+          profilePicture: game.team1Player1.profilePicture || null,
+        },
+        team1Player2: {
+          id: game.team1Player2.id,
+          name: game.team1Player2.name,
+          eloRating: Number(game.team1Player2.eloRating),
+          profilePicture: game.team1Player2.profilePicture || null,
+        },
+        team2Player1: {
+          id: game.team2Player1.id,
+          name: game.team2Player1.name,
+          eloRating: Number(game.team2Player1.eloRating),
+          profilePicture: game.team2Player1.profilePicture || null,
+        },
+        team2Player2: {
+          id: game.team2Player2.id,
+          name: game.team2Player2.name,
+          eloRating: Number(game.team2Player2.eloRating),
+          profilePicture: game.team2Player2.profilePicture || null,
+        },
+        team1Score: game.team1Score,
+        team2Score: game.team2Score,
+        playedAt: game.playedAt.toISOString(),
+      })),
+    });
+  } catch (error) {
+    console.error("[PlayerProfileAPI] Error fetching player:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch player data" },
+      { status: 500 }
+    );
+  }
+}

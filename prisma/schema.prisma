@@ -2,7 +2,8 @@ generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
+datasource db {i    
+
   provider = "sqlite"
   url      = env("DATABASE_URL")
 }
@@ -44,6 +45,7 @@ model Player {
   losses        Int      @default(0)
   lastPlayedAt  DateTime?
   lastDecayAt   DateTime?
+  profilePicture String?  @default("")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
