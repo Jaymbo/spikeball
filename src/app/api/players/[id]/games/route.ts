@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 
 // GET /api/players/[id]/games - Get player's game history
 export async function GET(
@@ -7,6 +8,12 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Auth-Prüfung - Nur eingeloggte User dürfen Spiel-Historie sehen
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 });
+    }
+
     const playerId = params.id;
     
     // Validation
