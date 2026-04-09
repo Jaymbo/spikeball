@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "Spikeball",
   description: "Individual ELO rating tracking for Spikeball 2v2 matches. Track rankings, record games, and generate balanced matchups.",
   icons: {
-    icon: "/home/server2/spikeball/public/spikeball-logo.png",
+    icon: "/spikeball-logo.png",
   },
 };
 
