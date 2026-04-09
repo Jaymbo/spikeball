@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { RotateCcw, AlertCircle } from "lucide-react";
+import { RotateCcw, AlertCircle, MessageSquare, Settings, Users } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,12 +11,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FeatureRequestsAdmin } from "./FeatureRequestsAdmin";
+import { AdminPlayers } from "./AdminPlayers";
 
 interface AdminToolsProps {
   onRefresh?: () => void;
+  players?: any[];
 }
 
-export default function AdminTools({ onRefresh }: AdminToolsProps) {
+export default function AdminTools({ onRefresh, players = [] }: AdminToolsProps) {
   const [replayLoading, setReplayLoading] = useState(false);
   const [showReplayConfirm, setShowReplayConfirm] = useState(false);
 
@@ -48,28 +52,55 @@ export default function AdminTools({ onRefresh }: AdminToolsProps) {
 
   return (
     <>
-      <div className="rounded-lg border bg-card p-6 space-y-4">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
-          <div className="flex-1">
-            <h3 className="font-semibold mb-2">Administrative Tools</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Verwende diese Funktionen, um die ELO-Bewertungen basierend auf dem Spielverlauf
-              neu zu berechnen.
-            </p>
-            <Button
-              onClick={() => setShowReplayConfirm(true)}
-              disabled={replayLoading}
-              variant="destructive"
-              size="sm"
-              className="gap-2"
-            >
-              <RotateCcw className="h-4 w-4" />
-              {replayLoading ? "Wird neu berechnet..." : "Spiele neu berechnen"}
-            </Button>
+      <Tabs defaultValue="tools" className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="tools" className="gap-2">
+            <Settings className="h-4 w-4" />
+            Tools
+          </TabsTrigger>
+          <TabsTrigger value="requests" className="gap-2">
+            <MessageSquare className="h-4 w-4" />
+            Requests
+          </TabsTrigger>
+          <TabsTrigger value="players" className="gap-2">
+            <Users className="h-4 w-4" />
+            Spieler
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="tools" className="space-y-4">
+          <div className="rounded-lg border bg-card p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <h3 className="font-semibold mb-2">Administrative Tools</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Verwende diese Funktionen, um die ELO-Bewertungen basierend auf dem Spielverlauf
+                  neu zu berechnen.
+                </p>
+                <Button
+                  onClick={() => setShowReplayConfirm(true)}
+                  disabled={replayLoading}
+                  variant="destructive"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  {replayLoading ? "Wird neu berechnet..." : "Spiele neu berechnen"}
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="requests" className="space-y-4">
+          <FeatureRequestsAdmin />
+        </TabsContent>
+
+        <TabsContent value="players" className="space-y-4">
+          <AdminPlayers players={players} onPlayersChange={onRefresh} />
+        </TabsContent>
+      </Tabs>
 
       <AlertDialog open={showReplayConfirm} onOpenChange={setShowReplayConfirm}>
         <AlertDialogContent>

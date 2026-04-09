@@ -195,8 +195,10 @@ export default function SpikeballPage() {
     { value: "generate", label: "Matchups", icon: Shuffle },
     { value: "history", label: "Verlauf", icon: History },
     { value: "friends", label: "Freunde", icon: UserCheck },
-    { value: "players", label: "Spieler", icon: Users },
-    ...(user?.isAdmin ? [{ value: "admin", label: "Admin", icon: Settings }] : []),
+    ...(user?.isAdmin ? [
+      { value: "players", label: "Spieler", icon: Users },
+      { value: "admin", label: "Admin", icon: Settings }
+    ] : []),
   ];
 
   const tabItems = user ? fullTabs : guestTabs;
@@ -424,7 +426,7 @@ export default function SpikeballPage() {
           </TabsContent>
 
           <TabsContent value="players" className="mt-6">
-            {user ? (
+            {user?.isAdmin ? (
               <PlayersTabUpdated
                 players={players}
                 onPlayersChange={handlePlayersChange}
@@ -434,18 +436,15 @@ export default function SpikeballPage() {
             ) : (
               <div className="border rounded-lg p-8 text-center">
                 <p className="text-muted-foreground mb-4">
-                  Du musst angemeldet sein, um Spieler zu verwalten.
+                  Du hast keine Admin-Berechtigung für diese Seite.
                 </p>
-                <Button onClick={() => setAuthModalOpen(true)}>
-                  Jetzt anmelden
-                </Button>
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="admin" className="mt-6">
             {user?.isAdmin ? (
-              <AdminTools onRefresh={handlePlayersChange} />
+              <AdminTools onRefresh={handlePlayersChange} players={players} />
             ) : (
               <div className="border rounded-lg p-8 text-center">
                 <p className="text-muted-foreground mb-4">
