@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Search, User } from "lucide-react";
+import { Search, User, Clock, UserCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface UserAutocompleteProps {
@@ -14,7 +14,29 @@ interface SearchResult {
   username: string;
   playerName: string | null;
   playerId: string | null;
+  friendshipStatus: "pending" | "accepted" | null;
 }
+
+const getFriendshipBadge = (status: string | null) => {
+  switch (status) {
+    case "pending":
+      return (
+        <Badge variant="secondary" className="text-xs gap-1">
+          <Clock className="h-3 w-3" />
+          Ausstehende Anfrage
+        </Badge>
+      );
+    case "accepted":
+      return (
+        <Badge variant="default" className="text-xs gap-1">
+          <UserCheck className="h-3 w-3" />
+          Bereits befreundet
+        </Badge>
+      );
+    default:
+      return null;
+  }
+};
 
 export function UserAutocomplete({ onSelect, onBlur }: UserAutocompleteProps) {
   const [query, setQuery] = useState("");
@@ -91,8 +113,11 @@ export function UserAutocomplete({ onSelect, onBlur }: UserAutocompleteProps) {
           {results.map((result) => (
             <button
               key={result.id}
-              onClick={() => handleSelect(result.id, result.username)}
-              className="w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-center gap-3"
+              onClick={() => result.friendshipStatus ? null : handleSelect(result.id, result.username)}
+              disabled={!!result.friendshipStatus}
+              className={`w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-center gap-3 ${
+                result.friendshipStatus ? "cursor-not-allowed opacity-60" : ""
+              }`}
             >
               <div className="flex items-center gap-3 flex-1">
                 <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -104,6 +129,7 @@ export function UserAutocomplete({ onSelect, onBlur }: UserAutocompleteProps) {
                     <span className="text-sm text-muted-foreground">{result.playerName}</span>
                   )}
                 </div>
+                {getFriendshipBadge(result.friendshipStatus)}
               </div>
             </button>
           ))}

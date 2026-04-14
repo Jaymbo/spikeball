@@ -11,8 +11,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { UserAutocomplete } from "./UserAutocomplete";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 
 interface AddFriendDialogProps {
   onSuccess?: () => void;
@@ -21,6 +22,7 @@ interface AddFriendDialogProps {
 export function AddFriendDialog({ onSuccess }: AddFriendDialogProps) {
   const [open, setOpen] = useState(false);
   const [username, setUsername] = useState("");
+  const [userId, setUserId] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -38,6 +40,7 @@ export function AddFriendDialog({ onSuccess }: AddFriendDialogProps) {
       if (res.ok) {
         toast.success("Freundschaftsanfrage gesendet!");
         setUsername("");
+        setUserId("");
         setOpen(false);
         onSuccess?.();
       } else {
@@ -52,6 +55,15 @@ export function AddFriendDialog({ onSuccess }: AddFriendDialogProps) {
     }
   };
 
+  const handleUserSelect = (selectedUserId: string, selectedUsername: string) => {
+    setUserId(selectedUserId);
+    setUsername(selectedUsername);
+  };
+
+  const handleAutocompleteBlur = () => {
+    // Allow form submission with the selected or typed username
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -64,27 +76,29 @@ export function AddFriendDialog({ onSuccess }: AddFriendDialogProps) {
         <DialogHeader>
           <DialogTitle>Freund hinzufügen</DialogTitle>
           <DialogDescription>
-            Gib den Benutzernamen ein, um eine Freundschaftsanfrage zu senden.
+            Suche einen Benutzer über seinen Namen oder Spielernamen.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            placeholder="Benutzername"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            disabled={loading}
+          <UserAutocomplete 
+            onSelect={handleUserSelect}
+            onBlur={handleAutocompleteBlur}
           />
           <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                setOpen(false);
+                setUsername("");
+                setUserId("");
+              }}
               disabled={loading}
             >
               Abbrechen
             </Button>
             <Button type="submit" disabled={loading || !username.trim()}>
-              {loading ? "Wird gesendet..." : "Senden"}
+              {loading ? "Wird gesendet..." : "Freundschaft anfragen"}
             </Button>
           </div>
         </form>

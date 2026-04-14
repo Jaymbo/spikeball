@@ -15,6 +15,13 @@ export async function GET(
 
     const playerId = params.id;
     
+    // Hole den aktuellen Player des eingeloggten Users
+    const currentPlayer = await db.player.findFirst({
+      where: { userId: currentUser.userId }
+    });
+    
+    const currentPlayerId = currentPlayer?.id || null;
+    
     // Validation
     if (!playerId || typeof playerId !== 'string') {
       console.error("[PlayerProfileAPI] Invalid playerId:", playerId);
@@ -103,6 +110,38 @@ export async function GET(
 
     console.log(`[PlayerProfileAPI] Found ${uniqueGames.length} unique games for ${playerId}`);
 
+    // Check friendship status - OPTIMIZED: Include friendship ID for efficient operations
+    let isFriend = false;
+    let friendRequestType: string | null = null;
+    let friendshipId: string | null = null;
+    
+    if (currentPlayerId && currentPlayerId !== playerId) {
+      const friendship = await db.friendship.findFirst({
+        where: {
+          OR: [
+            { requesterId: currentPlayerId, receiverId: playerId },
+            { requesterId: playerId, receiverId: currentPlayerId }
+          ]
+        }
+      });
+      
+      if (friendship) {
+        friendshipId = friendship.id;
+        isFriend = friendship.status === "accepted";
+        
+        if (friendship.status === "accepted") {
+          friendRequestType = "accepted";
+        } else if (friendship.requesterId === currentPlayerId) {
+          friendRequestType = "outgoing"; // Current user sent the request
+        } else if (friendship.requesterId === playerId) {
+          friendRequestType = "incoming"; // Other user sent the request
+        }
+      }
+    }
+    
+    // Include isOwnProfile to avoid additional fetch
+    const isOwnProfile = currentPlayerId === playerId;
+
     // Shape data with proper type conversions
     return NextResponse.json({
       player: {
@@ -183,6 +222,10 @@ export async function GET(
         team2Score: game.team2Score,
         playedAt: game.playedAt.toISOString(),
       })),
+      isFriend,
+      friendRequestType,
+      friendshipId,
+      isOwnProfile,
     });
   } catch (error) {
     console.error("[PlayerProfileAPI] Error fetching player:", error);

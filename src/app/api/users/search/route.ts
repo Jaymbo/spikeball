@@ -21,7 +21,6 @@ export async function GET(req: NextRequest) {
           mode: "insensitive"
         }
       },
-      include: { player: true },
       take: 10,
       select: {
         id: true,
@@ -36,11 +35,36 @@ export async function GET(req: NextRequest) {
       }
     });
 
+    // Hole existierende Freundschaften zwischen currentUser und gefundenen Benutzern
+    const userIds = users.map(u => u.id);
+    const friendships = await db.friendship.findMany({
+      where: {
+        OR: [
+          {
+            requesterId: currentUser.userId,
+            receiverId: { in: userIds }
+          },
+          {
+            receiverId: currentUser.userId,
+            requesterId: { in: userIds }
+          }
+        ]
+      }
+    });
+
+    // Map friendships zu user IDs für schnellen Lookup
+    const friendshipMap = new Map<string, string>();
+    friendships.forEach(f => {
+      const targetUserId = f.requesterId === currentUser.userId ? f.receiverId : f.requesterId;
+      friendshipMap.set(targetUserId, f.status);
+    });
+
     const results = users.map((user) => ({
       id: user.id,
       username: user.username,
       playerName: user.player?.name || null,
-      playerId: user.player?.id || null
+      playerId: user.player?.id || null,
+      friendshipStatus: friendshipMap.get(user.id) || null
     }));
 
     return NextResponse.json(results);
