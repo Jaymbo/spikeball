@@ -7,6 +7,7 @@ import { ChangePasswordDialog } from '@/components/auth/ChangePasswordDialog';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import SpikeballPage from './spikeball-page';
+import { useAuth } from '@/hooks/use-auth';
 
 interface CurrentUser {
   id: string;
@@ -16,45 +17,18 @@ interface CurrentUser {
 }
 
 export default function Page() {
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const router = useRouter();
+  const { user, isLoading, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
-    // Check if user is logged in by making a request to a protected endpoint
-    const checkAuth = async () => {
-      try {
-        const res = await fetch('/api/auth/check', {
-          method: 'GET',
-          credentials: 'include',
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data.user);
-
-          if (data.user.requiresPasswordChange) {
-            setShowPasswordDialog(true);
-          }
-        }
-      } catch (error) {
-        // Not logged in
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
+    if (user?.requiresPasswordChange) {
+      setShowPasswordDialog(true);
+    }
+  }, [user?.requiresPasswordChange]);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', {
-      method: 'POST',
-      credentials: 'include',
-    });
-
-    setUser(null);
+    logout();
     router.refresh();
   };
 
@@ -69,7 +43,7 @@ export default function Page() {
     );
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return <LoginForm onSuccess={() => router.refresh()} />;
   }
 
@@ -97,7 +71,6 @@ export default function Page() {
         isFirstLogin={true}
         onSuccess={() => {
           setShowPasswordDialog(false);
-          setUser((prev) => (prev ? { ...prev, requiresPasswordChange: false } : null));
         }}
       />
     </>

@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { FeatureRequestChatWidget } from "@/components/FeatureRequestChatWidget";
+import { QueryClientProvider } from "@/lib/query-client";
 
 const interSans = Inter({
   variable: "--font-geist-sans",
@@ -68,15 +69,15 @@ export default function RootLayout({
       <body
         className={`${interSans.variable} ${jetbrainsMono.variable} antialiased bg-background text-foreground`}
       >
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          {children}
-          <Toaster />
-          <SonnerToaster />
-          <FeatureRequestChatWidget />
-        </ThemeProvider>
+        <QueryClientProvider>
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+            {children}
+            <Toaster />
+            <SonnerToaster />
+            <FeatureRequestChatWidget />
+          </ThemeProvider>
+        </QueryClientProvider>
       </body>
     </html>
   );
 }
-
-

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import SearchInput from "@/components/ui/search-input";
+import { useFriendRequestMutation } from "@/hooks/use-friends";
 
 interface FriendRequest {
   id: string;
@@ -27,6 +28,7 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const friendRequestMutation = useFriendRequestMutation();
 
   useEffect(() => {
     fetchRequests();
@@ -49,22 +51,12 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
 
   const handleAccept = async (id: string) => {
     try {
-      const res = await fetch(`/api/friends/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "accept" }),
-      });
-
-      if (res.ok) {
-        toast.success("Freundschaft akzeptiert!");
-        const updated = requests.filter((r) => r.id !== id);
-        setRequests(updated);
-        onPendingCountChange?.(updated.length);
-        onRefresh?.();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Fehler beim Akzeptieren");
-      }
+      await friendRequestMutation.mutateAsync({ action: 'accept', requestId: id });
+      toast.success("Freundschaft akzeptiert!");
+      const updated = requests.filter((r) => r.id !== id);
+      setRequests(updated);
+      onPendingCountChange?.(updated.length);
+      onRefresh?.();
     } catch (error) {
       console.error("Error accepting friend request:", error);
       toast.error("Fehler beim Akzeptieren");
@@ -73,19 +65,11 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
 
   const handleReject = async (id: string) => {
     try {
-      const res = await fetch(`/api/friends/${id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        toast.success("Anfrage abgelehnt");
-        const updated = requests.filter((r) => r.id !== id);
-        setRequests(updated);
-        onPendingCountChange?.(updated.length);
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Fehler beim Ablehnen");
-      }
+      await friendRequestMutation.mutateAsync({ action: 'reject', requestId: id });
+      toast.success("Anfrage abgelehnt");
+      const updated = requests.filter((r) => r.id !== id);
+      setRequests(updated);
+      onPendingCountChange?.(updated.length);
     } catch (error) {
       console.error("Error rejecting friend request:", error);
       toast.error("Fehler beim Ablehnen");
