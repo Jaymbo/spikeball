@@ -1,3 +1,19 @@
+---
+title: Add Friend Dialog Autocomplete Integration
+tags: [friends, react, fix, autocomplete, user-search]
+---
+# PROBLEM
+Der "Freund hinzufügen" Dialog zeigte nur ein einfaches Input-Feld ohne Suchfunktion. User konnten nicht nach anderen Benutzern suchen, sondern mussten exakte Usernamen kennen. Zudem war die UX verwirrend, da eine `UserAutocomplete`-Komponente existierte aber nicht verwendet wurde.
+
+# LÖSUNG
+1. Importiere die `UserAutocomplete`-Komponente und entferne das einfache `Input`-Feld
+2. Implementiere `handleUserSelect` Funktion, um userId und username aus der Auswahl zu setzen
+3. Aktualisiere den Submit-Text zu "Freundschaft anfragen" für mehr Klarheit
+4. Initialisiere `userId` und `username` State und leere sie beim Schließen des Dialogs
+5. Aktualisiere die DialogDescription auf "Suche einen Benutzer über seinen Namen oder Spielernamen"
+
+# CODE / COMMANDS
+```typescript
 "use client";
 
 import { useState } from "react";
@@ -13,7 +29,6 @@ import {
 } from "@/components/ui/dialog";
 import { UserAutocomplete } from "./UserAutocomplete";
 import { toast } from "sonner";
-import { Input } from "@/components/ui/input";
 
 interface AddFriendDialogProps {
   onSuccess?: () => void;
@@ -106,3 +121,12 @@ export function AddFriendDialog({ onSuccess }: AddFriendDialogProps) {
     </Dialog>
   );
 }
+```
+
+# SHELL OUTPUT / ERROR
+Keine Errors. Die Integration war erfolgreich.
+
+# WEITERE RESOURCEN
+- Dateipfad: `spikeball/src/components/friends/AddFriendDialog.tsx`
+- UserAutocomplete-Komponente: `spikeball/src/components/friends/UserAutocomplete.tsx`
+---

@@ -335,16 +335,44 @@ export default function SpikeballPage() {
           )}
         </div>
 
+        {/* Tablet Tab Navigation (Compact Horizontal Bar) */}
+        <div className="hidden sm:flex lg:hidden mb-4 overflow-x-auto -mx-4 px-4">
+          <div className="inline-flex gap-1 rounded-lg bg-muted/50 border p-1 min-w-max">
+            {tabItems.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className={`flex items-center gap-1.5 rounded-md transition-colors text-xs px-2.5 py-2 ${
+                    activeTab === tab.value
+                      ? "bg-background shadow-sm text-foreground"
+                      : "text-muted-foreground hover:bg-background/50"
+                  }`}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {tab.label}
+                  {tab.value === "friends" && pendingFriendRequests > 0 && (
+                    <Badge variant="destructive" className="ml-0.5 h-4 px-1 text-[10px]">
+                      {pendingFriendRequests}
+                    </Badge>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Desktop Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="hidden sm:inline-flex w-full justify-start rounded-lg bg-muted p-1 h-auto">
+          <TabsList className="hidden lg:flex w-full justify-center gap-1 rounded-xl bg-muted/50 border p-1.5">
             {tabItems.map((tab) => {
               const Icon = tab.icon;
               return (
                 <TabsTrigger
                   key={tab.value}
                   value={tab.value}
-                  className="flex items-center gap-2 rounded-md data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm"
+                  className="flex-1 lg:flex-none lg:w-auto flex items-center gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm text-sm lg:text-base lg:px-4"
                 >
                   <Icon className="h-4 w-4" />
                   {tab.label}

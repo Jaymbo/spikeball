@@ -1,46 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { getCurrentUser } from "@/lib/auth";
+---
+title: Missing POST Handler for Accept Friend Request
+tags: [api, friends, friendship, post, bugfix]
+---
+# PROBLEM
+Klick auf "Annehmen" einer Freundschaftsanfrage im Profil führte zu einem Fehler, während "Ablehnen" funktionierte. Die Frontend-Komponente versuchte POST an `/api/friends/requests` zu senden, aber die Route hatte nur einen GET-Handler implementiert.
 
-// GET - Liefert alle ausstehenden Anfragen für den aktuellen User
-export async function GET() {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 });
-  }
+# LÖSUNG
+1. POST-Handler zur `/api/friends/requests/route.ts` hinzugefügt
+2. Handler validiert `friendshipId` und `action` (accept/reject)
+3. Überprüft, dass der aktuelle User der Empfänger (`receiverId`) ist
+4. Überprüft, dass die Anfrage noch "pending" ist
+5. Bei "accept": Status auf "accepted" updaten
+6. Bei "reject": Freundschaft aus Datenbank löschen
 
-  try {
-    const requests = await db.friendship.findMany({
-      where: {
-        receiverId: currentUser.userId,
-        status: "pending",
-      },
-      include: {
-        requester: {
-          include: { player: true },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+# CODE / COMMANDS
 
-    return NextResponse.json(
-      requests.map((r) => ({
-        id: r.id,
-        username: r.requester.username,
-        playerName: r.requester.player?.name || null,
-        playerId: r.requester.player?.id || null,
-        createdAt: r.createdAt,
-      }))
-    );
-  } catch (error) {
-    console.error("Error fetching friend requests:", error);
-    return NextResponse.json({ error: "Fehler beim Laden der Anfragen" }, { status: 500 });
-  }
-}
-
-// POST - Accept or reject friend requests
+**Neuer POST-Handler in `src/app/api/friends/requests/route.ts`:**
+```typescript
 export async function POST(request: NextRequest) {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
@@ -90,3 +66,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Fehler beim Verarbeiten der Anfrage" }, { status: 500 });
   }
 }
+```
+
+# SHELL OUTPUT / ERROR
+Frontend-Fehler beim Klick auf "Annehmen": POST `/api/friends/requests` endpoint konnte nicht gefunden werden (405 Method Not Allowed).
+
+# WEITERE RESOURCES
+- API Route: `src/app/api/friends/requests/route.ts`
+- Frontend Component: `src/components/profile/PlayerProfile.tsx`
+---

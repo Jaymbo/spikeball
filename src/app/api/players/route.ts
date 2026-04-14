@@ -324,15 +324,32 @@ export async function DELETE(request: NextRequest) {
     }
 
     await db.$transaction(async (tx) => {
+      // Delete dependent records first
       await tx.eloChange.deleteMany({ where: { playerId: id } });
-      await tx.player.delete({ where: { id } });
 
+      // Delete friendships (through User table)
       if (playerAny.userId) {
+        await tx.friendship.deleteMany({
+          OR: [
+            { requesterId: playerAny.userId },
+            { receiverId: playerAny.userId },
+          ],
+        });
+
+        // Delete feature requests
+        await tx.featureRequest.deleteMany({
+          where: { userId: playerAny.userId },
+        });
+
+        // Delete user first (parent record referenced by Player.userId)
         await tx.$executeRaw`
           DELETE FROM "User"
           WHERE id = ${playerAny.userId}
         `;
       }
+
+      // Finally delete player
+      await tx.player.delete({ where: { id } });
     });
 
     return NextResponse.json({ success: true });

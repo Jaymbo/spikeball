@@ -349,7 +349,7 @@ export default function Leaderboard({ onRefreshTrigger, currentUser }: Leaderboa
 
       {/* Profile Dialog */}
       <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent size="4xl" className="max-h-[90vh] overflow-y-auto">
           {selectedPlayerId && (
             <PlayerProfile 
               playerId={selectedPlayerId} 

@@ -15,6 +15,13 @@ export async function GET(
 
     const playerId = params.id;
     
+    // Hole den aktuellen Player des eingeloggten Users
+    const currentPlayer = await db.player.findFirst({
+      where: { userId: currentUser.userId }
+    });
+    
+    const currentPlayerId = currentPlayer?.id || null;
+    
     // Validation
     if (!playerId || typeof playerId !== 'string') {
       console.error("[PlayerProfileAPI] Invalid playerId:", playerId);
@@ -103,6 +110,73 @@ export async function GET(
 
     console.log(`[PlayerProfileAPI] Found ${uniqueGames.length} unique games for ${playerId}`);
 
+    // Check friendship status - OPTIMIZED: Include friendship ID for efficient operations
+    let isFriend = false;
+    let friendRequestType: string | null = null;
+    let friendshipId: string | null = null;
+    
+    // DEBUG: Log what we are searching for
+    console.log(`[API Friendship Check] Searching for friendship between currentUser=${currentPlayerId} and viewedPlayer=${playerId}`);
+    
+    if (currentPlayerId && currentPlayerId !== playerId) {
+      // CRITICAL FIX: Friendship uses USER IDs, but we have PLAYER IDs!
+      // We need to fetch the User ID for both players first
+      const [currentUserUser, viewedPlayerUser] = await Promise.all([
+        db.player.findUnique({ where: { id: currentPlayerId }, select: { userId: true } }),
+        db.player.findUnique({ where: { id: playerId }, select: { userId: true } })
+      ]);
+      
+      const currentUserId = currentUserUser?.userId || null;
+      const viewedUserId = viewedPlayerUser?.userId || null;
+      
+      console.log(`[API Friendship Check] Mapped Player IDs to User IDs:`, {
+        currentPlayerId,
+        mappedToUserId: currentUserId,
+        viewedPlayerId: playerId,
+        mappedToUserId: viewedUserId
+      });
+      
+      // Now search for friendship using the correct USER IDs
+      const friendships = await db.friendship.findMany({
+        where: {
+          OR: [
+            { requesterId: currentUserId, receiverId: viewedUserId },
+            { requesterId: viewedUserId, receiverId: currentUserId }
+          ]
+        }
+      });
+      
+      console.log(`[API Friendship Check] Found ${friendships.length} friendship(s):`, friendships);
+      
+      const friendship = friendships[0]; // Take the first one if any
+      
+      if (friendship) {
+        friendshipId = friendship.id;
+        isFriend = friendship.status === "accepted";
+        
+        // Compare with USER IDs, not Player IDs!
+        if (friendship.status === "accepted") {
+          friendRequestType = "accepted";
+        } else if (friendship.requesterId === currentUserId) {
+          friendRequestType = "outgoing"; // Current user sent the request
+        } else if (friendship.requesterId === viewedUserId) {
+          friendRequestType = "incoming"; // Other user sent the request
+        }
+      }
+    }
+    
+    // Include isOwnProfile to avoid additional fetch
+    const isOwnProfile = currentPlayerId === playerId;
+
+    // DEBUG: Log the friendship status being returned
+    console.log(`[API] Returning friendship status for ${playerId}:`, {
+      isFriend,
+      friendRequestType,
+      friendshipId,
+      currentPlayerId,
+      viewedPlayerId: playerId
+    });
+
     // Shape data with proper type conversions
     return NextResponse.json({
       player: {
@@ -183,6 +257,10 @@ export async function GET(
         team2Score: game.team2Score,
         playedAt: game.playedAt.toISOString(),
       })),
+      isFriend,
+      friendRequestType,
+      friendshipId,
+      isOwnProfile,
     });
   } catch (error) {
     console.error("[PlayerProfileAPI] Error fetching player:", error);
