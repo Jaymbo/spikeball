@@ -46,11 +46,16 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   icons: {
-    icon: "/favicon.png",
-    shortcut: "/favicon.png",
-    apple: "/apple-touch-icon.png",
+    icon: "/spikeball-logo.png",
   },
 };
 
@@ -61,10 +66,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de" suppressHydrationWarning className="dark">
-      <head>
-        <title>Startseite von Spikeball.ddns.net</title>
-        <meta name="google-site-verification" content="4srOQszXNlJ0b1JYxxiIAfcIHZhWEh46PFNL0urItuk" />
-      </head>
       <body
         className={`${interSans.variable} ${jetbrainsMono.variable} antialiased bg-background text-foreground`}
       >
@@ -78,5 +79,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-
