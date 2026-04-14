@@ -15,10 +15,10 @@ export async function GET(request: NextRequest) {
       take: limit,
       skip: offset,
       include: {
-        team1Player1: true,
-        team1Player2: true,
-        team2Player1: true,
-        team2Player2: true,
+        team1Player1: { select: { id: true, name: true, eloRating: true, profilePicture: true } },
+        team1Player2: { select: { id: true, name: true, eloRating: true, profilePicture: true } },
+        team2Player1: { select: { id: true, name: true, eloRating: true, profilePicture: true } },
+        team2Player2: { select: { id: true, name: true, eloRating: true, profilePicture: true } },
         eloChanges: true,
       },
     });

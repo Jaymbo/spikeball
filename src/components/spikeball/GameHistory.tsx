@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import SearchInput from "@/components/ui/search-input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface GameHistoryProps {
   onRefreshTrigger: number;
@@ -33,10 +34,10 @@ interface GameHistoryProps {
 
 interface GameEntry {
   id: string;
-  team1Player1: { id: string; name: string; eloRating: number };
-  team1Player2: { id: string; name: string; eloRating: number };
-  team2Player1: { id: string; name: string; eloRating: number };
-  team2Player2: { id: string; name: string; eloRating: number };
+  team1Player1: { id: string; name: string; eloRating: number; profilePicture?: string };
+  team1Player2: { id: string; name: string; eloRating: number; profilePicture?: string };
+  team2Player1: { id: string; name: string; eloRating: number; profilePicture?: string };
+  team2Player2: { id: string; name: string; eloRating: number; profilePicture?: string };
   team1Score: number;
   team2Score: number;
   playedAt: string;
@@ -194,15 +195,43 @@ export default function GameHistory({ onRefreshTrigger, onGameDeleted }: GameHis
                     {/* Teams and score */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 text-sm flex-wrap">
-                        <span className={`font-medium ${t1Won ? "" : "text-muted-foreground"}`}>
-                          {game.team1Player1.name} & {game.team1Player2.name}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <Avatar className="h-6 w-6 border bg-muted text-foreground">
+                            <AvatarImage src={game.team1Player1.profilePicture} />
+                            <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none">
+                              {game.team1Player1.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Avatar className="h-6 w-6 border bg-muted text-foreground">
+                            <AvatarImage src={game.team1Player2.profilePicture} />
+                            <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-emerald-500 to-teal-600 text-white border-none">
+                              {game.team1Player2.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className={`font-medium ${t1Won ? "" : "text-muted-foreground"}`}>
+                            {game.team1Player1.name} & {game.team1Player2.name}
+                          </span>
+                        </div>
                         <Badge variant="outline" className="font-mono text-xs px-1.5">
                           {game.team1Score}:{game.team2Score}
                         </Badge>
-                        <span className={`font-medium ${!t1Won ? "" : "text-muted-foreground"}`}>
-                          {game.team2Player1.name} & {game.team2Player2.name}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`font-medium ${!t1Won ? "" : "text-muted-foreground"}`}>
+                            {game.team2Player1.name} & {game.team2Player2.name}
+                          </span>
+                          <Avatar className="h-6 w-6 border bg-muted text-foreground">
+                            <AvatarImage src={game.team2Player1.profilePicture} />
+                            <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-amber-500 to-orange-600 text-white border-none">
+                              {game.team2Player1.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <Avatar className="h-6 w-6 border bg-muted text-foreground">
+                            <AvatarImage src={game.team2Player2.profilePicture} />
+                            <AvatarFallback className="text-xs font-bold bg-gradient-to-br from-amber-500 to-orange-600 text-white border-none">
+                              {game.team2Player2.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                        </div>
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
                         {formatDate(game.playedAt)}

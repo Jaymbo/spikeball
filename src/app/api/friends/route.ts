@@ -15,11 +15,11 @@ export async function GET() {
       include: {
         friendshipsSent: {
           where: { status: "accepted" },
-          include: { receiver: { include: { player: true } } },
+          include: { receiver: { include: { player: { select: { id: true, name: true, profilePicture: true } } } } },
         },
         friendshipsReceived: {
           where: { status: "accepted" },
-          include: { requester: { include: { player: true } } },
+          include: { requester: { include: { player: { select: { id: true, name: true, profilePicture: true } } } } },
         },
       },
     });
@@ -34,6 +34,7 @@ export async function GET() {
         username: f.receiver.username,
         playerName: f.receiver.player?.name || null,
         playerId: f.receiver.player?.id || null,
+        profilePicture: f.receiver.player?.profilePicture || undefined,
         createdAt: f.createdAt,
       })),
       ...user.friendshipsReceived.map((f) => ({
@@ -41,6 +42,7 @@ export async function GET() {
         username: f.requester.username,
         playerName: f.requester.player?.name || null,
         playerId: f.requester.player?.id || null,
+        profilePicture: f.requester.player?.profilePicture || undefined,
         createdAt: f.createdAt,
       })),
     ];
