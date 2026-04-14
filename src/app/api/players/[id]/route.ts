@@ -115,25 +115,51 @@ export async function GET(
     let friendRequestType: string | null = null;
     let friendshipId: string | null = null;
     
+    // DEBUG: Log what we are searching for
+    console.log(`[API Friendship Check] Searching for friendship between currentUser=${currentPlayerId} and viewedPlayer=${playerId}`);
+    
     if (currentPlayerId && currentPlayerId !== playerId) {
-      const friendship = await db.friendship.findFirst({
+      // CRITICAL FIX: Friendship uses USER IDs, but we have PLAYER IDs!
+      // We need to fetch the User ID for both players first
+      const [currentUserUser, viewedPlayerUser] = await Promise.all([
+        db.player.findUnique({ where: { id: currentPlayerId }, select: { userId: true } }),
+        db.player.findUnique({ where: { id: playerId }, select: { userId: true } })
+      ]);
+      
+      const currentUserId = currentUserUser?.userId || null;
+      const viewedUserId = viewedPlayerUser?.userId || null;
+      
+      console.log(`[API Friendship Check] Mapped Player IDs to User IDs:`, {
+        currentPlayerId,
+        mappedToUserId: currentUserId,
+        viewedPlayerId: playerId,
+        mappedToUserId: viewedUserId
+      });
+      
+      // Now search for friendship using the correct USER IDs
+      const friendships = await db.friendship.findMany({
         where: {
           OR: [
-            { requesterId: currentPlayerId, receiverId: playerId },
-            { requesterId: playerId, receiverId: currentPlayerId }
+            { requesterId: currentUserId, receiverId: viewedUserId },
+            { requesterId: viewedUserId, receiverId: currentUserId }
           ]
         }
       });
+      
+      console.log(`[API Friendship Check] Found ${friendships.length} friendship(s):`, friendships);
+      
+      const friendship = friendships[0]; // Take the first one if any
       
       if (friendship) {
         friendshipId = friendship.id;
         isFriend = friendship.status === "accepted";
         
+        // Compare with USER IDs, not Player IDs!
         if (friendship.status === "accepted") {
           friendRequestType = "accepted";
-        } else if (friendship.requesterId === currentPlayerId) {
+        } else if (friendship.requesterId === currentUserId) {
           friendRequestType = "outgoing"; // Current user sent the request
-        } else if (friendship.requesterId === playerId) {
+        } else if (friendship.requesterId === viewedUserId) {
           friendRequestType = "incoming"; // Other user sent the request
         }
       }
@@ -141,6 +167,15 @@ export async function GET(
     
     // Include isOwnProfile to avoid additional fetch
     const isOwnProfile = currentPlayerId === playerId;
+
+    // DEBUG: Log the friendship status being returned
+    console.log(`[API] Returning friendship status for ${playerId}:`, {
+      isFriend,
+      friendRequestType,
+      friendshipId,
+      currentPlayerId,
+      viewedPlayerId: playerId
+    });
 
     // Shape data with proper type conversions
     return NextResponse.json({

@@ -314,7 +314,16 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     ? ((player.wins / player.gamesPlayed) * 100).toFixed(1) 
     : "0.0";
 
-  console.log("[PlayerProfile] Rendering for player:", player.name);
+  // DEBUG: Log all friendship status values being used for rendering
+  console.log("[PlayerProfile rendering] State values:", {
+    player: player.name,
+    isActuallyOwnProfile,
+    isFriend,
+    friendRequestType,
+    friendshipId,
+    currentUserId,
+    showFriendButton,
+  });
 
   return (
     <div className="space-y-4 sm:space-y-6">
