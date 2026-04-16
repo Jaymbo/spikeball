@@ -1,4 +1,15 @@
 ---
+**Zeitpunkt:** 2025-01-18
+**Thema:** Profil-Einstellungen Implementierung & Styling-Fixes
+**Aktion:** Profil-Einstellungen-Funktionalität komplett neu implementiert mit PATCH-API-Route und ProfileSettingsDialog-Komponente. Profilbild-Upload in die Einstellungen integriert. Settings-Button-Styling korrigiert und TypeScript-Fehler behoben.
+**Ergebnis:**
+- Created: `src/components/profile/ProfileSettingsDialog.tsx` - Dialog mit Tabs für Profilbild, Name und Passwort
+- Updated: `src/app/api/players/[id]/route.ts` - PATCH-Methode für Namensänderungen hinzugefügt, TypeScript-Fehler behoben (doppelte Property-Namen, null-Check für User-IDs)
+- Updated: `src/components/profile/PlayerProfile.tsx` - Settings-Button-Styling korrigiert (weißer Hintergrund, Position rechts unten), separaten Profilbild-Dialog entfernt
+- Features: Profilbild-Upload, Namensänderung (2-30 Zeichen), Passwortänderung über ChangePasswordDialog, Validierung und Berechtigungs-Check
+- Styling: Settings-Button jetzt weiß mit grauem Icon, positioniert rechts unten am Avatar
+
+---
 **Zeit:** 2025-01-18
 **Thema:** Polling Performance Optimization - React Query Implementation
 **Aktion:** Replaced inefficient polling with React Query for intelligent data fetching. Created custom hooks (useAuth, usePlayers, usePendingFriendRequests) with caching, staleTime, and refetchInterval strategies. Implemented optimistic updates for friend requests.

@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Trophy, Calendar, History, TrendingUp, UserPlus, UserCheck, Clock, UserMinus, X } from "lucide-react";
+import { Trophy, Calendar, History, TrendingUp, UserPlus, UserCheck, Clock, UserMinus, X, Settings } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AvatarUpload } from "./AvatarUpload";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { AvatarUpload } from "./AvatarUpload";
+
+import { ProfileSettingsDialog } from "./ProfileSettingsDialog";
 import { getCurrentUser } from "@/lib/auth";
 
 interface PlayerProfileProps {
@@ -23,6 +26,8 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [playerData, setPlayerData] = useState<any>(null);
+  
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [isActuallyOwnProfile, setIsActuallyOwnProfile] = useState(false);
   const [isFriend, setIsFriend] = useState(false);
@@ -231,6 +236,26 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     fetchCurrentUserId(); // Only fetch currentUserId for operations
   }, [fetchPlayerData, fetchCurrentUserId]);
 
+  
+
+  const handleNameChange = (newName: string) => {
+    if (!playerData) return;
+    
+    setPlayerData({
+      ...playerData,
+      player: { ...playerData.player, name: newName },
+    });
+  };
+
+  const handleProfilePictureChange = (newPath: string) => {
+    if (!playerData) return;
+    
+    setPlayerData({
+      ...playerData,
+      player: { ...playerData.player, profilePicture: newPath },
+    });
+  };
+
   const handleUploadSuccess = (newPath: string) => {
     if (!playerData) return;
     
@@ -340,25 +365,39 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
                 </AvatarFallback>
               </Avatar>
               {(isActuallyOwnProfile || isAdmin) && (
-                <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-                  <DialogTrigger asChild>
+                <div className="flex gap-2">
+                  {isActuallyOwnProfile && (
                     <Button
                       size="sm"
-                      className="absolute -bottom-2 -right-2 h-7 w-7 sm:h-8 sm:w-8 rounded-full p-0 shadow-md"
+                      className="absolute -bottom-2 -right-2 h-7 w-7 sm:h-8 sm:w-8 rounded-full p-0 shadow-md bg-white text-gray-700 hover:bg-gray-100"
+                      onClick={() => setSettingsDialogOpen(true)}
                     >
-                      <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Profilbild hochladen</DialogTitle>
-                    </DialogHeader>
-                    <AvatarUpload 
-                      playerId={playerId} 
-                      onSuccess={handleUploadSuccess}
-                    />
-                  </DialogContent>
-                </Dialog>
+                  )}
+                  
+                  {isAdmin && !isActuallyOwnProfile && (
+                    <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          className="absolute -bottom-2 -right-2 h-7 w-7 sm:h-8 sm:w-8 rounded-full p-0 shadow-md"
+                        >
+                          <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Profilbild hochladen</DialogTitle>
+                        </DialogHeader>
+                        <AvatarUpload 
+                          playerId={playerId} 
+                          onSuccess={handleUploadSuccess}
+                        />
+                      </DialogContent>
+                    </Dialog>
+                  )}
+                </div>
               )}
             </div>
 
@@ -595,6 +634,32 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {isActuallyOwnProfile && (
+        <ProfileSettingsDialog
+          open={settingsDialogOpen}
+          playerId={playerId}
+          currentName={player.name}
+          currentProfilePicture={player.profilePicture}
+          onNameChange={handleNameChange}
+          onProfilePictureChange={handleProfilePictureChange}
+          onOpenChange={setSettingsDialogOpen}
+        />
+      )}
+      
+      {isAdmin && !isActuallyOwnProfile && (
+        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Profilbild hochladen</DialogTitle>
+            </DialogHeader>
+            <AvatarUpload 
+              playerId={playerId} 
+              onSuccess={handleUploadSuccess}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

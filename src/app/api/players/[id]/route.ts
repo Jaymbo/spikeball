@@ -133,18 +133,22 @@ export async function GET(
         currentPlayerId,
         mappedToUserId: currentUserId,
         viewedPlayerId: playerId,
-        mappedToUserId: viewedUserId
+        mappedToUserId2: viewedUserId
       });
       
       // Now search for friendship using the correct USER IDs
-      const friendships = await db.friendship.findMany({
-        where: {
-          OR: [
-            { requesterId: currentUserId, receiverId: viewedUserId },
-            { requesterId: viewedUserId, receiverId: currentUserId }
-          ]
-        }
-      });
+      // Only search if both user IDs are available
+      let friendships: any[] = [];
+      if (currentUserId && viewedUserId) {
+        friendships = await db.friendship.findMany({
+          where: {
+            OR: [
+              { requesterId: currentUserId, receiverId: viewedUserId },
+              { requesterId: viewedUserId, receiverId: currentUserId }
+            ]
+          }
+        });
+      }
       
       console.log(`[API Friendship Check] Found ${friendships.length} friendship(s):`, friendships);
       
@@ -266,6 +270,81 @@ export async function GET(
     console.error("[PlayerProfileAPI] Error fetching player:", error);
     return NextResponse.json(
       { error: "Failed to fetch player data" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Auth-Prüfung - Nur eingeloggte User dürfen ihr eigenes Profil bearbeiten
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 });
+    }
+
+    const playerId = params.id;
+    
+    // Hole den aktuellen Player des eingeloggten Users
+    const currentPlayer = await db.player.findFirst({
+      where: { userId: currentUser.userId }
+    });
+    
+    // Prüfe, ob der User der Besitzer des Profils ist
+    if (!currentPlayer || currentPlayer.id !== playerId) {
+      return NextResponse.json({ error: "Keine Berechtigung" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const { name } = body;
+
+    // Validierung
+    if (!name || typeof name !== 'string') {
+      return NextResponse.json({ error: "Name ist erforderlich" }, { status: 400 });
+    }
+
+    if (name.length < 2 || name.length > 30) {
+      return NextResponse.json({ error: "Name muss zwischen 2 und 30 Zeichen lang sein" }, { status: 400 });
+    }
+
+    // Prüfe, ob der Name bereits vergeben ist
+    const existingPlayer = await db.player.findFirst({
+      where: {
+        name: name,
+        NOT: { id: playerId }
+      }
+    });
+
+    if (existingPlayer) {
+      return NextResponse.json({ error: "Dieser Name ist bereits vergeben" }, { status: 409 });
+    }
+
+    // Update den Spieler
+    const updatedPlayer = await db.player.update({
+      where: { id: playerId },
+      data: { name }
+    });
+
+    return NextResponse.json({
+      player: {
+        id: updatedPlayer.id,
+        name: updatedPlayer.name,
+        eloRating: Number(updatedPlayer.eloRating),
+        gamesPlayed: updatedPlayer.gamesPlayed,
+        wins: updatedPlayer.wins,
+        losses: updatedPlayer.losses,
+        profilePicture: updatedPlayer.profilePicture || null,
+        createdAt: updatedPlayer.createdAt.toISOString(),
+        lastPlayedAt: updatedPlayer.lastPlayedAt ? updatedPlayer.lastPlayedAt.toISOString() : null,
+      }
+    });
+  } catch (error) {
+    console.error("[PlayerProfileAPI] Error updating player:", error);
+    return NextResponse.json(
+      { error: "Failed to update player data" },
       { status: 500 }
     );
   }
