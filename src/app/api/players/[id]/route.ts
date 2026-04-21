@@ -28,7 +28,7 @@ export async function GET(
       return NextResponse.json({ error: "Invalid playerId" }, { status: 400 });
     }
 
-    console.log(`[PlayerProfileAPI] Fetching data for player: ${playerId}`);
+    // console.log(`[PlayerProfileAPI] Fetching data for player: ${playerId}`);
 
     const player = await db.player.findUnique({
       where: { id: playerId },
@@ -108,7 +108,7 @@ export async function GET(
       (game, index, self) => index === self.findIndex((g) => g.id === game.id)
     );
 
-    console.log(`[PlayerProfileAPI] Found ${uniqueGames.length} unique games for ${playerId}`);
+    // console.log(`[PlayerProfileAPI] Found ${uniqueGames.length} unique games for ${playerId}`);
 
     // Check friendship status - OPTIMIZED: Include friendship ID for efficient operations
     let isFriend = false;
@@ -116,7 +116,7 @@ export async function GET(
     let friendshipId: string | null = null;
     
     // DEBUG: Log what we are searching for
-    console.log(`[API Friendship Check] Searching for friendship between currentUser=${currentPlayerId} and viewedPlayer=${playerId}`);
+    // console.log(`[API Friendship Check] Searching for friendship between currentUser=${currentPlayerId} and viewedPlayer=${playerId}`);
     
     if (currentPlayerId && currentPlayerId !== playerId) {
       // CRITICAL FIX: Friendship uses USER IDs, but we have PLAYER IDs!
@@ -129,12 +129,12 @@ export async function GET(
       const currentUserId = currentUserUser?.userId || null;
       const viewedUserId = viewedPlayerUser?.userId || null;
       
-      console.log(`[API Friendship Check] Mapped Player IDs to User IDs:`, {
-        currentPlayerId,
-        mappedToUserId: currentUserId,
-        viewedPlayerId: playerId,
-        mappedToUserId2: viewedUserId
-      });
+      // console.log(`[API Friendship Check] Mapped Player IDs to User IDs:`, {
+      //   currentPlayerId,
+      //   mappedToUserId: currentUserId,
+      //   viewedPlayerId: playerId,
+      //   mappedToUserId2: viewedUserId
+      // });
       
       // Now search for friendship using the correct USER IDs
       // Only search if both user IDs are available
@@ -150,7 +150,7 @@ export async function GET(
         });
       }
       
-      console.log(`[API Friendship Check] Found ${friendships.length} friendship(s):`, friendships);
+      // console.log(`[API Friendship Check] Found ${friendships.length} friendship(s):`, friendships);
       
       const friendship = friendships[0]; // Take the first one if any
       
@@ -173,13 +173,13 @@ export async function GET(
     const isOwnProfile = currentPlayerId === playerId;
 
     // DEBUG: Log the friendship status being returned
-    console.log(`[API] Returning friendship status for ${playerId}:`, {
-      isFriend,
-      friendRequestType,
-      friendshipId,
-      currentPlayerId,
-      viewedPlayerId: playerId
-    });
+    // console.log(`[API] Returning friendship status for ${playerId}:`, {
+    //   isFriend,
+    //   friendRequestType,
+    //   friendshipId,
+    //   currentPlayerId,
+    //   viewedPlayerId: playerId
+    // });
 
     // Shape data with proper type conversions
     return NextResponse.json({

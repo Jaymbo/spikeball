@@ -41,7 +41,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     setError(null);
     
     try {
-      console.log("[PlayerProfile] Fetching data for playerId:", playerId);
+      // console.log("[PlayerProfile] Fetching data for playerId:", playerId);
       const res = await fetch(`/api/players/${playerId}`);
       
       if (!res.ok) {
@@ -49,7 +49,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       }
       
       const data = await res.json();
-      console.log("[PlayerProfile] Received data:", data);
+      // console.log("[PlayerProfile] Received data:", data);
       
       if (!data.player) {
         throw new Error("Invalid response: missing player data");
@@ -265,6 +265,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     });
     setUploadDialogOpen(false);
     toast.success("Profilbild erfolgreich hochgeladen");
+    fetchPlayerData();
   };
 
   // Wenn es das eigene Profil ist, Freundschafts-Button nicht anzeigen
@@ -340,15 +341,15 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     : "0.0";
 
   // DEBUG: Log all friendship status values being used for rendering
-  console.log("[PlayerProfile rendering] State values:", {
-    player: player.name,
-    isActuallyOwnProfile,
-    isFriend,
-    friendRequestType,
-    friendshipId,
-    currentUserId,
-    showFriendButton,
-  });
+  // console.log("[PlayerProfile rendering] State values:", {
+  //   player: player.name,
+  //   isActuallyOwnProfile,
+  //   isFriend,
+  //   friendRequestType,
+  //   friendshipId,
+  //   currentUserId,
+  //   showFriendButton,
+  // });
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -358,8 +359,8 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
           <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
             {/* Avatar Section */}
             <div className="relative mx-auto sm:mx-0">
-              <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-background shadow-lg">
-                <AvatarImage src={player.profilePicture || undefined} alt={player.name} />
+              <Avatar className="h-20 w-20 <sm:h-24 sm:w-24 border-4 border-background shadow-lg">
+                <AvatarImage src={player.profilePicture ? `/api/images${player.profilePicture}` : undefined} alt={player.name} />
                 <AvatarFallback className="text-2xl sm:text-3xl bg-gradient-to-br from-orange-400 to-orange-600 text-white">
                   {player.name.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
@@ -505,7 +506,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
                           className="gap-2 w-full sm:w-auto text-destructive hover:text-destructive hover:bg-destructive/10"
                         >
                           <X className="h-4 w-4" />
-                          {friendRequestLoading ? "Wird abgebrochen..." : "Anfrage zurckziehen"}
+                          {friendRequestLoading ? "Wird abgebrochen..." : "Anfrage zurückziehen"}
                         </Button>
                       );
                     }
@@ -518,7 +519,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
                         className="gap-2 w-full sm:w-auto"
                       >
                         <UserPlus className="h-4 w-4" />
-                        {friendRequestLoading ? "Wird gesendet..." : "Freund hinzufgen"}
+                        {friendRequestLoading ? "Wird gesendet..." : "Freund hinzufügen"}
                       </Button>
                     );
                   })()

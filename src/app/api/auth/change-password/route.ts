@@ -30,9 +30,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       return NextResponse.json(
-        { error: 'Passwort muss mindestens 6 Zeichen lang sein' },
+        { error: 'Passwort muss mindestens 8 Zeichen lang sein' },
         { status: 400 }
       );
     }
@@ -43,7 +43,15 @@ export async function POST(request: NextRequest) {
         where: { id: user.userId },
       });
 
-      if (!dbUser || !verifyPassword(currentPassword, dbUser.passwordHash)) {
+      if (!dbUser) {
+        return NextResponse.json(
+          { error: 'Benutzer nicht gefunden' },
+          { status: 404 }
+        );
+      }
+
+      const isPasswordValid = await verifyPassword(currentPassword, dbUser.passwordHash);
+      if (!isPasswordValid) {
         return NextResponse.json(
           { error: 'Aktuelles Passwort ist falsch' },
           { status: 401 }
@@ -51,11 +59,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Update password and clear requiresPasswordChange flag
+    // Hash new password and update user
+    const passwordHash = await hashPassword(newPassword);
+    
     await db.user.update({
       where: { id: user.userId },
       data: {
-        passwordHash: hashPassword(newPassword),
+        passwordHash,
         requiresPasswordChange: false,
       },
     });

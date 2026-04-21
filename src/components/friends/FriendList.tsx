@@ -125,7 +125,7 @@ export function FriendList({ refreshTrigger, onRefresh }: FriendListProps) {
             <div className="flex items-center justify-between gap-4">
               <Avatar className="h-12 w-12 shrink-0 border-2 bg-muted text-foreground">
                 {friend.profilePicture ? (
-                  <AvatarImage src={friend.profilePicture} />
+                  <AvatarImage src={friend.profilePicture ? `/api/images${friend.profilePicture}` : undefined} />
                 ) : (
                   <AvatarFallback className="font-bold bg-gradient-to-br from-pink-500 to-rose-600 text-white border-none">
                     {friend.username.charAt(0).toUpperCase()}

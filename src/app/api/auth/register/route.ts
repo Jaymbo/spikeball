@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return NextResponse.json(
-        { error: 'Passwort muss mindestens 6 Zeichen lang sein' },
+        { error: 'Passwort muss mindestens 8 Zeichen lang sein' },
         { status: 400 }
       );
     }
@@ -52,11 +52,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Hash password (now async due to bcrypt)
+    const passwordHash = await hashPassword(password);
+
     // Create user and player in transaction
     const user = await db.user.create({
       data: {
         username,
-        passwordHash: hashPassword(password),
+        passwordHash,
         isAdmin: false,
         requiresPasswordChange: false,
       },
@@ -96,7 +99,6 @@ export async function POST(request: NextRequest) {
       process.env.AUTH_COOKIE_SECURE === 'true' ||
       (process.env.NODE_ENV === 'production' && isHttps);
 
-    // Set the cookie in the response
     response.cookies.set('auth-token', token, {
       httpOnly: true,
       secure: useSecureCookie,

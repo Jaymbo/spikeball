@@ -134,7 +134,7 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
             <div className="flex items-center justify-between gap-4">
               <Avatar className="h-12 w-12 shrink-0 border-2 bg-muted text-foreground">
                 {request.profilePicture ? (
-                  <AvatarImage src={request.profilePicture} />
+                  <AvatarImage src={request.profilePicture ? `/api/images${request.profilePicture}` : undefined} />
                 ) : (
                   <AvatarFallback className="font-bold bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-none">
                     {request.username.charAt(0).toUpperCase()}
