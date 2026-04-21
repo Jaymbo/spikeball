@@ -18,6 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import SearchInput from "@/components/ui/search-input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { PlayerProfile } from "@/components/profile/PlayerProfile";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface LeaderboardEntry {
   rank: number;
@@ -30,6 +31,7 @@ interface LeaderboardEntry {
   winRate: number;
   lastPlayedAt: string | null;
   createdAt: string;
+  profilePicture?: string;
 }
 
 interface CurrentUser {
@@ -195,8 +197,14 @@ export default function Leaderboard({ onRefreshTrigger, currentUser }: Leaderboa
           {/* 1st Place - Center */}
           <Card className="sm:order-2 border-yellow-300 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProfileClick(topThree[0]?.id)}>
             <CardContent className="flex flex-col items-center pt-6">
+              <Avatar className="h-20 w-20 mb-3 border-4 border-yellow-400 shadow-lg">
+                <AvatarImage src={topThree[0]?.profilePicture} />
+                <AvatarFallback className="text-xl font-bold bg-yellow-100 text-yellow-700">
+                  {topThree[0]?.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
               <div className="relative">
-                <Trophy className="h-10 w-10 text-yellow-500 mb-2" />
+                <Trophy className="h-6 w-6 text-yellow-500 mb-1" />
               </div>
               <h3 className="text-xl font-bold">{topThree[0]?.name}</h3>
               <div className="text-3xl font-black text-yellow-600 mt-1">
@@ -220,7 +228,13 @@ export default function Leaderboard({ onRefreshTrigger, currentUser }: Leaderboa
           {topThree.length >= 2 && (
             <Card className="sm:order-1 border-gray-300 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/30 dark:to-slate-900/30 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProfileClick(topThree[1]?.id)}>
               <CardContent className="flex flex-col items-center pt-6">
-                <Medal className="h-10 w-10 text-gray-400 mb-2" />
+                <Avatar className="h-16 w-16 mb-2 border-4 border-gray-400 shadow-lg">
+                  <AvatarImage src={topThree[1]?.profilePicture} />
+                  <AvatarFallback className="text-lg font-bold bg-gray-100 text-gray-700">
+                    {topThree[1]?.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <Medal className="h-6 w-6 text-gray-400 mb-1" />
                 <h3 className="text-lg font-bold">{topThree[1]?.name}</h3>
                 <div className="text-2xl font-black text-gray-500 mt-1">
                   {topThree[1]?.eloRating}
@@ -244,7 +258,13 @@ export default function Leaderboard({ onRefreshTrigger, currentUser }: Leaderboa
           {topThree.length >= 3 && (
             <Card className="sm:order-3 border-amber-300 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProfileClick(topThree[2]?.id)}>
               <CardContent className="flex flex-col items-center pt-6">
-                <Medal className="h-10 w-10 text-amber-600 mb-2" />
+                <Avatar className="h-16 w-16 mb-2 border-4 border-amber-600 shadow-lg">
+                  <AvatarImage src={topThree[2]?.profilePicture} />
+                  <AvatarFallback className="text-lg font-bold bg-amber-100 text-amber-700">
+                    {topThree[2]?.name.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <Medal className="h-6 w-6 text-amber-600 mb-1" />
                 <h3 className="text-lg font-bold">{topThree[2]?.name}</h3>
                 <div className="text-2xl font-black text-amber-600 mt-1">
                   {topThree[2]?.eloRating}
@@ -284,6 +304,12 @@ export default function Leaderboard({ onRefreshTrigger, currentUser }: Leaderboa
                     <div className="w-8 flex items-center justify-center">
                       {getRankIcon(player.rank)}
                     </div>
+                    <Avatar className="h-10 w-10 shrink-0 border-2 bg-muted text-foreground">
+                      <AvatarImage src={player.profilePicture} />
+                      <AvatarFallback className="font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white border-none">
+                        {player.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium truncate">{player.name}</span>

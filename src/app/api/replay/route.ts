@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-import { processGameElo } from "@/lib/elo";
+import { processGameElo, calculateGlobalRanks } from "@/lib/elo";
 
 /**
  * POST /api/replay
@@ -61,16 +61,24 @@ export async function POST(request: NextRequest) {
         const p3 = currentPlayers.find((p) => p.id === game.team2Player1Id)!;
         const p4 = currentPlayers.find((p) => p.id === game.team2Player2Id)!;
 
+        // Calculate global ranks for participation bonus
+        const allPlayers = await tx.player.findMany({
+          orderBy: { eloRating: 'desc' }
+        });
+        const totalPlayers = allPlayers.length;
+        const ranks = calculateGlobalRanks(allPlayers);
+
         // Calculate ELO changes based on current ratings
         const eloResult = processGameElo(
           {
-            team1Player1: { id: p1.id, eloRating: p1.eloRating },
-            team1Player2: { id: p2.id, eloRating: p2.eloRating },
-            team2Player1: { id: p3.id, eloRating: p3.eloRating },
-            team2Player2: { id: p4.id, eloRating: p4.eloRating },
+            team1Player1: { id: p1.id, eloRating: p1.eloRating, globalRank: ranks.get(p1.id) || 1 },
+            team1Player2: { id: p2.id, eloRating: p2.eloRating, globalRank: ranks.get(p2.id) || 1 },
+            team2Player1: { id: p3.id, eloRating: p3.eloRating, globalRank: ranks.get(p3.id) || 1 },
+            team2Player2: { id: p4.id, eloRating: p4.eloRating, globalRank: ranks.get(p4.id) || 1 },
           },
           game.team1Score,
           game.team2Score,
+          totalPlayers
         );
 
         const team1Won = game.team1Score > game.team2Score;

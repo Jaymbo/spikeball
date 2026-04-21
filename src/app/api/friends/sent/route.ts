@@ -17,7 +17,7 @@ export async function GET() {
       },
       include: {
         receiver: {
-          include: { player: true },
+          include: { player: { select: { id: true, name: true, profilePicture: true } } },
         },
       },
       orderBy: {
@@ -31,6 +31,7 @@ export async function GET() {
         username: r.receiver.username,
         playerName: r.receiver.player?.name || null,
         playerId: r.receiver.player?.id || null,
+        profilePicture: r.receiver.player?.profilePicture || undefined,
         createdAt: r.createdAt,
       }))
     );

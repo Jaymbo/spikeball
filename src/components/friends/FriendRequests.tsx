@@ -4,14 +4,17 @@ import { useEffect, useState } from "react";
 import { UserCheck, UserX, Clock, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import SearchInput from "@/components/ui/search-input";
+import { useFriendRequestMutation } from "@/hooks/use-friends";
 
 interface FriendRequest {
   id: string;
   username: string;
   playerName: string | null;
   playerId: string | null;
+  profilePicture?: string;
   createdAt: string;
 }
 
@@ -25,6 +28,7 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const friendRequestMutation = useFriendRequestMutation();
 
   useEffect(() => {
     fetchRequests();
@@ -47,22 +51,12 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
 
   const handleAccept = async (id: string) => {
     try {
-      const res = await fetch(`/api/friends/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "accept" }),
-      });
-
-      if (res.ok) {
-        toast.success("Freundschaft akzeptiert!");
-        const updated = requests.filter((r) => r.id !== id);
-        setRequests(updated);
-        onPendingCountChange?.(updated.length);
-        onRefresh?.();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Fehler beim Akzeptieren");
-      }
+      await friendRequestMutation.mutateAsync({ action: 'accept', requestId: id });
+      toast.success("Freundschaft akzeptiert!");
+      const updated = requests.filter((r) => r.id !== id);
+      setRequests(updated);
+      onPendingCountChange?.(updated.length);
+      onRefresh?.();
     } catch (error) {
       console.error("Error accepting friend request:", error);
       toast.error("Fehler beim Akzeptieren");
@@ -71,19 +65,11 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
 
   const handleReject = async (id: string) => {
     try {
-      const res = await fetch(`/api/friends/${id}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        toast.success("Anfrage abgelehnt");
-        const updated = requests.filter((r) => r.id !== id);
-        setRequests(updated);
-        onPendingCountChange?.(updated.length);
-      } else {
-        const data = await res.json();
-        toast.error(data.error || "Fehler beim Ablehnen");
-      }
+      await friendRequestMutation.mutateAsync({ action: 'reject', requestId: id });
+      toast.success("Anfrage abgelehnt");
+      const updated = requests.filter((r) => r.id !== id);
+      setRequests(updated);
+      onPendingCountChange?.(updated.length);
     } catch (error) {
       console.error("Error rejecting friend request:", error);
       toast.error("Fehler beim Ablehnen");
@@ -146,6 +132,15 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
         filteredRequests.map((request) => (
           <Card key={request.id} className="p-4">
             <div className="flex items-center justify-between gap-4">
+              <Avatar className="h-12 w-12 shrink-0 border-2 bg-muted text-foreground">
+                {request.profilePicture ? (
+                  <AvatarImage src={request.profilePicture} />
+                ) : (
+                  <AvatarFallback className="font-bold bg-gradient-to-br from-cyan-500 to-blue-600 text-white border-none">
+                    {request.username.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                )}
+              </Avatar>
               <div className="flex-1">
                 <p className="font-medium">{request.username}</p>
                 {request.playerName && (

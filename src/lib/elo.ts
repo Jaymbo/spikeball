@@ -1,110 +1,202 @@
 /**
  * ELO Rating Calculation for Spikeball 2v2
  * 
+ * New System:
+ * - Percent-based calculation (0 to 1) instead of win/loss binary
+ * - Elo-dependent win-bonus (anti-farming)
+ * - Global participation bonus based on leaderboard rank
+ * 
  * Individual players are rated, but games are played as teams of 2.
- * The team's combined ELO determines expected outcome, and each
- * individual player's rating is updated accordingly.
  */
-
-const K_FACTOR = 32;
+// --- NEW CONSTANTS ---
+const K_FACTOR = 28;                      // Performance volatility
 const INITIAL_RATING = 1000;
-const DECAY_RATE = 0.05; // 5% per month of inactivity
+const DECAY_RATE = 0.05;                 // 5% per month of inactivity
+
+// Win Bonus Configuration
+const MIN_WIN_BONUS = 3;                 // Minimum bonus for favorites
+const BASE_WIN_BONUS = 12;               // Maximum bonus for underdogs
+const WIN_SCALING_FACTOR = 12;           // Scaling range based on expected score
+
+// Participation Bonus Configuration
+const MAX_PARTICIPATION_BONUS = 5;       // Maximum for worst players
 
 /**
- * Calculate expected score for a team based on average ELO
+ * Calculate expected score (probability) for a team based on average ELO
+ * Returns: 0 to 1 (where 1 = certain win, 0 = certain loss)
  */
 export function calculateExpectedScore(teamAvgElo: number, opponentAvgElo: number): number {
   return 1 / (1 + Math.pow(10, (opponentAvgElo - teamAvgElo) / 400));
 }
 
 /**
- * Calculate ELO change for a single player
+ * Calculate actual score percentage based on game score
+ * Returns: 0 to 1 (ownScore / totalScore)
+ */
+function calculateActualScore(ownScore: number, opponentScore: number): number {
+  const total = ownScore + opponentScore;
+  return total === 0 ? 0.5 : ownScore / total;
+}
+
+/**
+ * Calculate ELO-dependent win bonus
+ * - High expectedScore (favorite) → small bonus
+ * - Low expectedScore (underdog) → large bonus
+ */
+function calculateWinBonus(expectedScore: number): number {
+  const bonus = MIN_WIN_BONUS + WIN_SCALING_FACTOR * (1 - expectedScore);
+  return Math.round(Math.max(MIN_WIN_BONUS, Math.min(BASE_WIN_BONUS, bonus)));
+}
+
+/**
+ * Calculate global participation bonus based on leaderboard rank
+ * Linear distribution: rank 1 gets 0, last rank gets MAX_PARTICIPATION_BONUS
+ */
+export function calculateGlobalParticipationBonus(rank: number, totalPlayers: number): number {
+  if (rank < 1 || rank > totalPlayers) return 0;
+  
+  const bonus = Math.round(
+    (MAX_PARTICIPATION_BONUS * (rank - 1)) / (totalPlayers - 1)
+  );
+  
+  return Math.min(MAX_PARTICIPATION_BONUS, Math.max(0, bonus));
+}
+
+/**
+ * Calculate complete ELO change for a single player
+ * 
+ * Components:
+ * 1. Performance Diff: (actual - expected) * K_FACTOR
+ * 2. Win Bonus (if won, scaled by expected score)
+ * 3. Participation Bonus (based on global rank)
  */
 export function calculateEloChange(
   playerRating: number,
-  teamAvgElo: number,
+  ownTeamAvgElo: number,
   opponentAvgElo: number,
-  actualScore: number, // 1 for win, 0 for loss
-): number {
-  const expectedScore = calculateExpectedScore(teamAvgElo, opponentAvgElo);
-  return Math.round(K_FACTOR * (actualScore - expectedScore));
+  ownScore: number,
+  opponentScore: number,
+  globalRank: number,
+  totalPlayers: number
+): {
+  newRating: number;
+  change: number;
+  breakdown: {
+    expectedAnteil: number;
+    actualAnteil: number;
+    perfDiff: number;
+    duelScore: number;
+    winBonus: number;
+    participationBonus: number;
+    totalChange: number;
+  };
+} {
+  // 1. Expected percentage (0 to 1)
+  const expectedAnteil = calculateExpectedScore(ownTeamAvgElo, opponentAvgElo);
+  
+  // 2. Actual percentage from score (0 to 1)
+  const actualAnteil = calculateActualScore(ownScore, opponentScore);
+  
+  // 3. Performance difference
+  const perfDiff = actualAnteil - expectedAnteil;
+  const duelScore = K_FACTOR * perfDiff;
+  
+  // 4. ELO-dependent win bonus
+  const won = ownScore > opponentScore;
+  const winBonus = won ? calculateWinBonus(expectedAnteil) : 0;
+  
+  // 5. Global participation bonus
+  const participationBonus = calculateGlobalParticipationBonus(globalRank, totalPlayers);
+  
+  // 6. Total change
+  const totalChange = Math.round(duelScore + winBonus + participationBonus);
+  
+  return {
+    newRating: playerRating + totalChange,
+    change: totalChange,
+    breakdown: {
+      expectedAnteil,
+      actualAnteil,
+      perfDiff,
+      duelScore: Math.round(duelScore * 100) / 100,
+      winBonus,
+      participationBonus,
+      totalChange
+    }
+  };
 }
 
 /**
  * Process a completed game and return ELO changes for all 4 players
  * 
- * Each player is rated against the AVERAGE of the opposing team,
- * not their own team average.
- * Player 1 & 2 (Team 1) vs average of Players 3 & 4 (Team 2)
- * Player 3 & 4 (Team 2) vs average of Players 1 & 2 (Team 1)
+ * Each player is rated against the AVERAGE of the opposing team.
+ * Individual participation bonuses are based on global leaderboard rank.
  */
 export function processGameElo(
   players: {
-    team1Player1: { id: string; eloRating: number };
-    team1Player2: { id: string; eloRating: number };
-    team2Player1: { id: string; eloRating: number };
-    team2Player2: { id: string; eloRating: number };
+    team1Player1: { id: string; eloRating: number; globalRank: number };
+    team1Player2: { id: string; eloRating: number; globalRank: number };
+    team2Player1: { id: string; eloRating: number; globalRank: number };
+    team2Player2: { id: string; eloRating: number; globalRank: number };
   },
   team1Score: number,
   team2Score: number,
+  totalPlayers: number  // Total players in leaderboard for participation bonus
 ): {
-  team1Player1: { newRating: number; change: number };
-  team1Player2: { newRating: number; change: number };
-  team2Player1: { newRating: number; change: number };
-  team2Player2: { newRating: number; change: number };
+  team1Player1: { newRating: number; change: number; breakdown: any };
+  team1Player2: { newRating: number; change: number; breakdown: any };
+  team2Player1: { newRating: number; change: number; breakdown: any };
+  team2Player2: { newRating: number; change: number; breakdown: any };
 } {
   const team1Avg = (players.team1Player1.eloRating + players.team1Player2.eloRating) / 2;
   const team2Avg = (players.team2Player1.eloRating + players.team2Player2.eloRating) / 2;
 
-  // Determine winner (1 = win, 0 = loss)
-  const team1Won = team1Score > team2Score;
-  const team1Actual = team1Won ? 1 : 0;
-  const team2Actual = team1Won ? 0 : 1;
-
-  // Team 1 players are rated against Team 2 average
-  // Team 2 players are rated against Team 1 average
-  const team1P1Change = calculateEloChange(
+  // Calculate for each player using new system
+  const team1P1Result = calculateEloChange(
     players.team1Player1.eloRating,
     team1Avg,
     team2Avg,
-    team1Actual,
+    team1Score,
+    team2Score,
+    players.team1Player1.globalRank,
+    totalPlayers
   );
-  const team1P2Change = calculateEloChange(
+  
+  const team1P2Result = calculateEloChange(
     players.team1Player2.eloRating,
     team1Avg,
     team2Avg,
-    team1Actual,
+    team1Score,
+    team2Score,
+    players.team1Player2.globalRank,
+    totalPlayers
   );
-  const team2P1Change = calculateEloChange(
+  
+  const team2P1Result = calculateEloChange(
     players.team2Player1.eloRating,
     team2Avg,
     team1Avg,
-    team2Actual,
+    team2Score,
+    team1Score,
+    players.team2Player1.globalRank,
+    totalPlayers
   );
-  const team2P2Change = calculateEloChange(
+  
+  const team2P2Result = calculateEloChange(
     players.team2Player2.eloRating,
     team2Avg,
     team1Avg,
-    team2Actual,
+    team2Score,
+    team1Score,
+    players.team2Player2.globalRank,
+    totalPlayers
   );
 
   return {
-    team1Player1: {
-      newRating: players.team1Player1.eloRating + team1P1Change,
-      change: team1P1Change,
-    },
-    team1Player2: {
-      newRating: players.team1Player2.eloRating + team1P2Change,
-      change: team1P2Change,
-    },
-    team2Player1: {
-      newRating: players.team2Player1.eloRating + team2P1Change,
-      change: team2P1Change,
-    },
-    team2Player2: {
-      newRating: players.team2Player2.eloRating + team2P2Change,
-      change: team2P2Change,
-    },
+    team1Player1: team1P1Result,
+    team1Player2: team1P2Result,
+    team2Player1: team2P1Result,
+    team2Player2: team2P2Result,
   };
 }
 
@@ -288,3 +380,21 @@ export function generateRoundRobin(
 }
 
 export { INITIAL_RATING, K_FACTOR, DECAY_RATE };
+
+/**
+ * Calculate global ranks for a set of players based on their ELO ratings
+ * Returns a map of playerId -> rank (1 = highest ELO)
+ */
+export function calculateGlobalRanks(
+  players: Array<{ id: string; eloRating: number }>
+): Map<string, number> {
+  // Sort by ELO descending
+  const sorted = [...players].sort((a, b) => b.eloRating - a.eloRating);
+  
+  const ranks = new Map<string, number>();
+  sorted.forEach((player, index) => {
+    ranks.set(player.id, index + 1);
+  });
+  
+  return ranks;
+}

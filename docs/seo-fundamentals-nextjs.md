@@ -5,7 +5,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { FeatureRequestChatWidget } from "@/components/FeatureRequestChatWidget";
-import { QueryClientProvider } from "@/lib/query-client";
 
 const interSans = Inter({
   variable: "--font-geist-sans",
@@ -47,11 +46,16 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   icons: {
-    icon: "/favicon.png",
-    shortcut: "/favicon.png",
-    apple: "/apple-touch-icon.png",
+    icon: "/spikeball-logo.png",
   },
 };
 
@@ -62,21 +66,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de" suppressHydrationWarning className="dark">
-      <head>
-        <title>Startseite von Spikeball.ddns.net</title>
-        <meta name="google-site-verification" content="4srOQszXNlJ0b1JYxxiIAfcIHZhWEh46PFNL0urItuk" />
-      </head>
       <body
         className={`${interSans.variable} ${jetbrainsMono.variable} antialiased bg-background text-foreground`}
       >
-        <QueryClientProvider>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-            {children}
-            <Toaster />
-            <SonnerToaster />
-            <FeatureRequestChatWidget />
-          </ThemeProvider>
-        </QueryClientProvider>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+          {children}
+          <Toaster />
+          <SonnerToaster />
+          <FeatureRequestChatWidget />
+        </ThemeProvider>
       </body>
     </html>
   );

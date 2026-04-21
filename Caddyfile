@@ -1,23 +1,26 @@
-:80 {
-	@transform_port_query {
-		query XTransformPort=*
-	}
-
-	handle @transform_port_query {
-		reverse_proxy localhost:{query.XTransformPort} {
-			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Real-IP {remote_host}
-		}
-	}
-
-	handle {
-		reverse_proxy localhost:3000 {
-			header_up Host {host}
-			header_up X-Forwarded-For {remote_host}
-			header_up X-Forwarded-Proto {scheme}
-			header_up X-Real-IP {remote_host}
-		}
-	}
+spikeball.ddns.net {
+    # Prüfe zuerst, ob die Datei existiert, und serviere sie direkt
+    @static_files {
+        file {
+            try_files {path}
+        }
+    }
+    handle @static_files {
+        root * /home/server2/spikeball/public
+        file_server
+        header Cache-Control "public, max-age=3600, must-revalidate"
+    }
+    
+    # Transform Port Query Handler
+    @transform_port_query {
+        query XTransformPort=*
+    }
+    handle @transform_port_query {
+        reverse_proxy localhost:{query.XTransformPort}
+    }
+    
+    # Fallback zu reverse_proxy für dynamische Inhalte
+    handle {
+        reverse_proxy localhost:3000
+    }
 }

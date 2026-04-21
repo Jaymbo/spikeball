@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { INITIAL_RATING, processGameElo } from "@/lib/elo";
+import { INITIAL_RATING, processGameElo, calculateGlobalRanks } from "@/lib/elo";
 
 // GET /api/games - List games with player names
 export async function GET(request: NextRequest) {
@@ -15,10 +15,10 @@ export async function GET(request: NextRequest) {
       take: limit,
       skip: offset,
       include: {
-        team1Player1: true,
-        team1Player2: true,
-        team2Player1: true,
-        team2Player2: true,
+        team1Player1: { select: { id: true, name: true, eloRating: true, profilePicture: true } },
+        team1Player2: { select: { id: true, name: true, eloRating: true, profilePicture: true } },
+        team2Player1: { select: { id: true, name: true, eloRating: true, profilePicture: true } },
+        team2Player2: { select: { id: true, name: true, eloRating: true, profilePicture: true } },
         eloChanges: true,
       },
     });
@@ -93,16 +93,24 @@ export async function POST(request: NextRequest) {
     const p3 = players.find((p) => p.id === team2Player1Id)!;
     const p4 = players.find((p) => p.id === team2Player2Id)!;
 
-    // Calculate ELO changes
+    // Calculate global ranks for participation bonus
+    const allPlayers = await db.player.findMany({
+      orderBy: { eloRating: 'desc' }
+    });
+    const totalPlayers = allPlayers.length;
+    const ranks = calculateGlobalRanks(allPlayers);
+
+    // Calculate ELO changes with new system
     const eloResult = processGameElo(
       {
-        team1Player1: { id: p1.id, eloRating: p1.eloRating },
-        team1Player2: { id: p2.id, eloRating: p2.eloRating },
-        team2Player1: { id: p3.id, eloRating: p3.eloRating },
-        team2Player2: { id: p4.id, eloRating: p4.eloRating },
+        team1Player1: { id: p1.id, eloRating: p1.eloRating, globalRank: ranks.get(p1.id) || 1 },
+        team1Player2: { id: p2.id, eloRating: p2.eloRating, globalRank: ranks.get(p2.id) || 1 },
+        team2Player1: { id: p3.id, eloRating: p3.eloRating, globalRank: ranks.get(p3.id) || 1 },
+        team2Player2: { id: p4.id, eloRating: p4.eloRating, globalRank: ranks.get(p4.id) || 1 },
       },
       team1Score,
       team2Score,
+      totalPlayers
     );
 
     const team1Won = team1Score > team2Score;
@@ -300,15 +308,23 @@ export async function DELETE(request: NextRequest) {
           throw new Error("Replay failed: one or more players not found");
         }
 
+        // Calculate global ranks for participation bonus
+        const allPlayers = await tx.player.findMany({
+          orderBy: { eloRating: 'desc' }
+        });
+        const totalPlayers = allPlayers.length;
+        const ranks = calculateGlobalRanks(allPlayers);
+
         const eloResult = processGameElo(
           {
-            team1Player1: { id: p1.id, eloRating: p1.eloRating },
-            team1Player2: { id: p2.id, eloRating: p2.eloRating },
-            team2Player1: { id: p3.id, eloRating: p3.eloRating },
-            team2Player2: { id: p4.id, eloRating: p4.eloRating },
+            team1Player1: { id: p1.id, eloRating: p1.eloRating, globalRank: ranks.get(p1.id) || 1 },
+            team1Player2: { id: p2.id, eloRating: p2.eloRating, globalRank: ranks.get(p2.id) || 1 },
+            team2Player1: { id: p3.id, eloRating: p3.eloRating, globalRank: ranks.get(p3.id) || 1 },
+            team2Player2: { id: p4.id, eloRating: p4.eloRating, globalRank: ranks.get(p4.id) || 1 },
           },
           replayGame.team1Score,
           replayGame.team2Score,
+          totalPlayers
         );
 
         const team1Won = replayGame.team1Score > replayGame.team2Score;

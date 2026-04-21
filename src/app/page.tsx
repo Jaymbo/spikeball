@@ -31,6 +31,9 @@ import GameHistory from "@/components/spikeball/GameHistory";
 import AdminTools from "@/components/spikeball/AdminTools";
 import { FriendsTab } from "@/components/friends/FriendsTab";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/use-auth";
+import { usePlayers, useInvalidatePlayers } from "@/hooks/use-players";
+import { usePendingFriendRequests } from "@/hooks/use-friends";
 
 interface Player {
   id: string;
@@ -42,125 +45,40 @@ interface Player {
   lastPlayedAt: string | null;
 }
 
-interface CurrentUser {
-  id: string;
-  username: string;
-  isAdmin: boolean;
-  requiresPasswordChange: boolean;
-}
-
 export default function SpikeballPage() {
   const { theme, setTheme } = useTheme();
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [activeTab, setActiveTab] = useState("leaderboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<CurrentUser | null>(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [themeReady, setThemeReady] = useState(false);
-  const [pendingFriendRequests, setPendingFriendRequests] = useState(0);
+
+  // React Query Hooks - ersetzen das Polling
+  const { user, isLoading: isAuthLoading, isAuthenticated, logout } = useAuth();
+  const { data: players = [], isLoading: isPlayersLoading } = usePlayers();
+  const { data: pendingData } = usePendingFriendRequests();
+  const invalidatePlayers = useInvalidatePlayers();
+
+  const pendingFriendRequests = pendingData?.count || 0;
 
   useEffect(() => {
     setThemeReady(true);
   }, []);
 
-  const refreshAuth = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/auth/check?t=${Date.now()}`, {
-        credentials: "include",
-        cache: "no-store",
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setUser({
-          id: data.user.userId,
-          username: data.user.username,
-          isAdmin: data.user.isAdmin,
-          requiresPasswordChange: Boolean(data.user.requiresPasswordChange),
-        });
-        if (data.user.requiresPasswordChange) {
-          setShowPasswordDialog(true);
-        }
-      } else {
-        setUser(null);
-      }
-    } catch (error) {
-      console.error("Auth check error:", error);
-      setUser(null);
-    } finally {
-      setIsAuthLoading(false);
-    }
-  }, []);
-
-  // Fetch pending friend requests count
-  const fetchPendingFriendRequests = useCallback(async () => {
-    if (!user) return;
-    try {
-      const res = await fetch("/api/friends/pending-count");
-      if (res.ok) {
-        const data = await res.json();
-        setPendingFriendRequests(data.count);
-      }
-    } catch (error) {
-      console.error("Error fetching pending friend requests:", error);
-    }
-  }, [user]);
-
-  // Check auth on mount and when page becomes visible
+  // Check if password change is required
   useEffect(() => {
-    refreshAuth();
-
-    // Also check auth when page becomes visible (e.g., after redirect from login)
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        refreshAuth();
-        fetchPendingFriendRequests();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [refreshAuth, fetchPendingFriendRequests]);
-
-  // Fetch pending friend requests periodically
-  useEffect(() => {
-    if (!user) return;
-    fetchPendingFriendRequests();
-    const interval = setInterval(fetchPendingFriendRequests, 30000); // Check every 30 seconds
-    return () => clearInterval(interval);
-  }, [user, fetchPendingFriendRequests]);
-
-  const fetchPlayers = useCallback(async () => {
-    try {
-      const res = await fetch("/api/players");
-      if (res.ok) {
-        const data = await res.json();
-        setPlayers(data);
-      }
-    } catch (err) {
-      console.error("Error fetching players:", err);
-    } finally {
-      setLoading(false);
+    if (user?.requiresPasswordChange) {
+      setShowPasswordDialog(true);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchPlayers();
-  }, [fetchPlayers, refreshTrigger]);
+  }, [user?.requiresPasswordChange]);
 
   const handlePlayersChange = useCallback(() => {
-    fetchPlayers();
-    setRefreshTrigger((prev) => prev + 1);
-  }, [fetchPlayers]);
+    invalidatePlayers();
+  }, [invalidatePlayers]);
 
   const handleGameRecorded = useCallback(() => {
-    fetchPlayers();
-    setRefreshTrigger((prev) => prev + 1);
-  }, [fetchPlayers]);
+    invalidatePlayers();
+  }, [invalidatePlayers]);
 
   if (isAuthLoading) {
     return (
@@ -174,12 +92,7 @@ export default function SpikeballPage() {
   }
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", {
-      method: "POST",
-      credentials: 'include',
-    });
-    setUser(null);
-    setPendingFriendRequests(0);
+    logout();
     toast.success("Erfolgreich abgemeldet");
   };
 
@@ -203,7 +116,7 @@ export default function SpikeballPage() {
 
   const tabItems = user ? fullTabs : guestTabs;
 
-  if (loading) {
+  if (isPlayersLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-background to-amber-50 dark:from-orange-950/20 dark:via-background dark:to-amber-950/20">
         <div className="text-center text-muted-foreground">
@@ -387,7 +300,7 @@ export default function SpikeballPage() {
           </TabsList>
 
           <TabsContent value="leaderboard" className="mt-6">
-            <Leaderboard onRefreshTrigger={refreshTrigger} currentUser={user} />
+            <Leaderboard onRefreshTrigger={0} currentUser={user} />
           </TabsContent>
 
           <TabsContent value="record" className="mt-6">
@@ -423,7 +336,7 @@ export default function SpikeballPage() {
           <TabsContent value="history" className="mt-6">
             {user ? (
               <GameHistory
-                onRefreshTrigger={refreshTrigger}
+                onRefreshTrigger={0}
                 onGameDeleted={handleGameRecorded}
               />
             ) : (
@@ -496,9 +409,7 @@ export default function SpikeballPage() {
         open={authModalOpen}
         onOpenChange={setAuthModalOpen}
         onSuccess={async () => {
-          await refreshAuth();
-          await fetchPlayers();
-          setRefreshTrigger((prev) => prev + 1);
+          // React Query wird automatisch neu laden
         }}
       />
 
@@ -508,7 +419,6 @@ export default function SpikeballPage() {
         onOpenChange={setShowPasswordDialog}
         onSuccess={() => {
           setShowPasswordDialog(false);
-          setUser((prev) => (prev ? { ...prev, requiresPasswordChange: false } : null));
         }}
       />
     </div>

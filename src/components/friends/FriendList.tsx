@@ -5,6 +5,7 @@ import { UserMinus, Trophy, Clock, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import SearchInput from "@/components/ui/search-input";
 
@@ -13,6 +14,7 @@ interface Friend {
   username: string;
   playerName: string | null;
   playerId: string | null;
+  profilePicture?: string;
   createdAt: string;
 }
 
@@ -121,6 +123,15 @@ export function FriendList({ refreshTrigger, onRefresh }: FriendListProps) {
         filteredFriends.map((friend) => (
           <Card key={friend.id} className="p-4">
             <div className="flex items-center justify-between gap-4">
+              <Avatar className="h-12 w-12 shrink-0 border-2 bg-muted text-foreground">
+                {friend.profilePicture ? (
+                  <AvatarImage src={friend.profilePicture} />
+                ) : (
+                  <AvatarFallback className="font-bold bg-gradient-to-br from-pink-500 to-rose-600 text-white border-none">
+                    {friend.username.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                )}
+              </Avatar>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <p className="font-medium">{friend.username}</p>

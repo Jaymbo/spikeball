@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,38 +13,18 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Lightbulb, Bug } from "lucide-react";
 import { FeatureRequestForm } from "./FeatureRequestForm";
+import { useAuth } from "@/hooks/use-auth";
 
 export function FeatureRequestChatWidget() {
   const [open, setOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Prüfen ob User authentifiziert ist
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/check');
-        if (response.ok) {
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch (error) {
-        setIsAuthenticated(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
+  const { isAuthenticated, isLoading } = useAuth();
 
   const handleSuccess = () => {
     setOpen(false);
   };
 
-  // Nicht anzeigen wenn nicht authentifiziert
-  if (loading || !isAuthenticated) {
+  // Nicht anzeigen wenn nicht authentifiziert oder lädt
+  if (isLoading || !isAuthenticated) {
     return null;
   }
 
