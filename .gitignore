@@ -51,3 +51,4 @@ server.log
 /skills/
 public/uploads/*
 3001
+db/custom.db
