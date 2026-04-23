@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create uploads directory if not exists
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "profiles");
+    const uploadDir = path.join("/home/server2/spikeball", "public", "uploads", "profiles");
     console.log("Upload directory:", uploadDir);
     console.log("Directory exists before mkdir?", existsSync(uploadDir));
     
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     // Delete old profile picture if exists
     if (player.profilePicture) {
-      const oldPath = path.join(process.cwd(), "public", player.profilePicture);
+      const oldPath = path.join("/home/server2/spikeball", "public", player.profilePicture);
       console.log("Old profile picture path:", oldPath);
       if (existsSync(oldPath)) {
         try {
