@@ -208,7 +208,7 @@ export async function replayGame(
 /**
  * Helper function for updating player stats within a transaction
  */
-async function updatePlayerStatsInTx(
+export async function updatePlayerStatsInTx(
   playerId: string,
   newRating: number,
   won: boolean,

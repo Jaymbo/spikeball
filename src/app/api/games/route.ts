@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { INITIAL_RATING, processGameElo, calculateGlobalRanks } from "@/lib/elo";
-import { updatePlayerStats, replayGame } from "@/lib/game-utils";
+import { updatePlayerStatsInTx, replayGame } from "@/lib/game-utils";
 
 // GET /api/games - List games with player names
 export async function GET(request: NextRequest) {
@@ -155,29 +155,33 @@ export async function POST(request: NextRequest) {
       });
 
       // Update all 4 players using helper function
-      await updatePlayerStats(
+      await updatePlayerStatsInTx(
         p1.id,
         eloResult.team1Player1.newRating,
         team1Won,
-        gameDate
+        gameDate,
+        tx
       );
-      await updatePlayerStats(
+      await updatePlayerStatsInTx(
         p2.id,
         eloResult.team1Player2.newRating,
         team1Won,
-        gameDate
+        gameDate,
+        tx
       );
-      await updatePlayerStats(
+      await updatePlayerStatsInTx(
         p3.id,
         eloResult.team2Player1.newRating,
         !team1Won,
-        gameDate
+        gameDate,
+        tx
       );
-      await updatePlayerStats(
+      await updatePlayerStatsInTx(
         p4.id,
         eloResult.team2Player2.newRating,
         !team1Won,
-        gameDate
+        gameDate,
+        tx
       );
 
       // Create ELO change records
