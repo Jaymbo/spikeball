@@ -1,32 +1,84 @@
-import crypto from 'crypto';
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'spikeball-secret-key-change-in-production'
+  process.env.JWT_SECRET
 );
+
+// Validate required environment variables on import (fail fast)
+if (!process.env.JWT_SECRET) {
+  throw new Error('FATAL: JWT_SECRET environment variable is not set. This is a security requirement.');
+}
+
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  console.error('WARN: JWT_SECRET should be at least 32 characters long for production security');
+}
+
 const TOKEN_EXPIRE = '7d';
 const COOKIE_NAME = 'auth-token';
+
+// Old system constants (for migration)
+const OLD_SALT = 'spikeball-salt';
+const OLD_ITERATIONS = 1000;
+const OLD_KEY_LENGTH = 64;
+const OLD_DIGEST = 'sha512';
 
 export interface JWTPayload {
   userId: string;
   username: string;
   isAdmin: boolean;
+  [key: string]: any; // Index signature for jose compatibility
 }
 
-// Hash password with bcrypt-like approach (simple for SQLite)
-export function hashPassword(password: string): string {
+/**
+ * Detect if a hash is bcrypt format (starts with $2a$, $2b$, or $2y$)
+ */
+function isBcryptHash(hash: string): boolean {
+  return hash.startsWith('$2a$') || hash.startsWith('$2b$') || hash.startsWith('$2y$');
+}
+
+/**
+ * Hash password using OLD crypto-based system (for migration detection only)
+ * DO NOT use for new passwords!
+ */
+function hashPasswordOld(password: string): string {
   return crypto
-    .pbkdf2Sync(password, 'spikeball-salt', 1000, 64, 'sha512')
+    .pbkdf2Sync(password, OLD_SALT, OLD_ITERATIONS, OLD_KEY_LENGTH, OLD_DIGEST)
     .toString('hex');
 }
 
-// Verify password
-export function verifyPassword(password: string, hash: string): boolean {
-  const rehash = crypto
-    .pbkdf2Sync(password, 'spikeball-salt', 1000, 64, 'sha512')
-    .toString('hex');
-  return rehash === hash;
+/**
+ * Hash password using bcrypt (industry standard)
+ * - Automatically generates and includes unique salt per password
+ * - Cost factor 12 for good security/performance balance
+ */
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 12);
+}
+
+/**
+ * Verify password against hash (supports BOTH old and new formats)
+ * Returns: { isValid: boolean, needsMigration: boolean }
+ * - needsMigration: true if old hash format detected and password is valid
+ */
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  // Try bcrypt first (new system)
+  if (isBcryptHash(hash)) {
+    return bcrypt.compare(password, hash);
+  }
+
+  // Fall back to old crypto-based system (for migration)
+  const oldHash = hashPasswordOld(password);
+  return oldHash === hash;
+}
+
+/**
+ * Check if a password hash needs migration to bcrypt
+ */
+export function needsPasswordMigration(hash: string): boolean {
+  return !isBcryptHash(hash);
 }
 
 // Create JWT token
@@ -52,9 +104,11 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
 // Set auth cookie
 export async function setAuthCookie(token: string): Promise<void> {
   const cookieStore = await cookies();
+  const isSecure = process.env.NODE_ENV === 'production';
+  
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60, // 7 days
     path: '/',

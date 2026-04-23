@@ -25,9 +25,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (newPassword.length < 6) {
+    if (newPassword.length < 8) {
       return NextResponse.json(
-        { error: 'Passwort muss mindestens 6 Zeichen lang sein' },
+        { error: 'Passwort muss mindestens 8 Zeichen lang sein' },
         { status: 400 }
       );
     }
@@ -43,10 +43,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Hash password with bcrypt (async)
+    const passwordHash = await hashPassword(newPassword);
+    
     await db.user.update({
       where: { id: userId },
       data: {
-        passwordHash: hashPassword(newPassword),
+        passwordHash,
         requiresPasswordChange: true,
       },
     });

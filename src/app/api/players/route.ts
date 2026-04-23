@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { getCurrentUser, hashPassword } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
+import { User } from "@prisma/client";
 
 // GET /api/players - List all players
 export async function GET() {
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
       userModel.create({
         data: {
           username: trimmedName,
-          passwordHash: hashPassword("12345678"),
+          passwordHash: await hashPassword("12345678"),
           isAdmin: false,
           requiresPasswordChange: true,
         },
@@ -171,9 +172,10 @@ export async function PATCH(request: NextRequest) {
       }
 
       const temporaryPassword = "12345678";
+      const newPasswordHash = await hashPassword(temporaryPassword);
 
       await db.$executeRaw`
-        UPDATE "User" SET "passwordHash" = ${hashPassword(temporaryPassword)}, "requiresPasswordChange" = 1, "updatedAt" = datetime('now')
+        UPDATE "User" SET "passwordHash" = ${newPasswordHash}, "requiresPasswordChange" = 1, "updatedAt" = datetime('now')
         WHERE id = ${playerWithUser.userId}
       `;
 
@@ -330,10 +332,12 @@ export async function DELETE(request: NextRequest) {
       // Delete friendships (through User table)
       if (playerAny.userId) {
         await tx.friendship.deleteMany({
-          OR: [
-            { requesterId: playerAny.userId },
-            { receiverId: playerAny.userId },
-          ],
+          where: {
+            OR: [
+              { requesterId: playerAny.userId },
+              { receiverId: playerAny.userId },
+            ],
+          },
         });
 
         // Delete feature requests

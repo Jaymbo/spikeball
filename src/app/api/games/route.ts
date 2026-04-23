@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { INITIAL_RATING, processGameElo, calculateGlobalRanks } from "@/lib/elo";
+import { updatePlayerStatsInTx, replayGame } from "@/lib/game-utils";
 
 // GET /api/games - List games with player names
 export async function GET(request: NextRequest) {
@@ -10,8 +11,23 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    const games = await db.game.findMany({
-      orderBy: { playedAt: "desc" },
+    // Validate pagination parameters
+    if (limit < 1 || limit > 100) {
+      return NextResponse.json(
+        { error: "Limit must be between 1 and 100" },
+        { status: 400 }
+      );
+    }
+
+    if (offset < 0) {
+      return NextResponse.json(
+        { error: "Offset cannot be negative" },
+        { status: 400 }
+      );
+    }
+
+        const games = await db.game.findMany({
+      orderBy: [{ playedAt: "desc" }, { createdAt: "desc" }],
       take: limit,
       skip: offset,
       include: {
@@ -114,6 +130,7 @@ export async function POST(request: NextRequest) {
     );
 
     const team1Won = team1Score > team2Score;
+    const gameDate = playedAt ? new Date(playedAt) : new Date();
 
     // Create game and update player ratings in a transaction
     const game = await db.$transaction(async (tx) => {
@@ -126,7 +143,7 @@ export async function POST(request: NextRequest) {
           team2Player2Id,
           team1Score,
           team2Score,
-          playedAt: playedAt ? new Date(playedAt) : new Date(),
+          playedAt: gameDate,
         },
         include: {
           team1Player1: true,
@@ -137,93 +154,68 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Update player 1 (Team 1 Player 1)
-      await tx.player.update({
-        where: { id: p1.id },
-        data: {
-          eloRating: eloResult.team1Player1.newRating,
-          gamesPlayed: { increment: 1 },
-          wins: { increment: team1Won ? 1 : 0 },
-          losses: { increment: team1Won ? 0 : 1 },
-          lastPlayedAt: playedAt ? new Date(playedAt) : new Date(),
-        },
-      });
-
-      // Update player 2 (Team 1 Player 2)
-      await tx.player.update({
-        where: { id: p2.id },
-        data: {
-          eloRating: eloResult.team1Player2.newRating,
-          gamesPlayed: { increment: 1 },
-          wins: { increment: team1Won ? 1 : 0 },
-          losses: { increment: team1Won ? 0 : 1 },
-          lastPlayedAt: playedAt ? new Date(playedAt) : new Date(),
-        },
-      });
-
-      // Update player 3 (Team 2 Player 1)
-      await tx.player.update({
-        where: { id: p3.id },
-        data: {
-          eloRating: eloResult.team2Player1.newRating,
-          gamesPlayed: { increment: 1 },
-          wins: { increment: team1Won ? 0 : 1 },
-          losses: { increment: team1Won ? 1 : 0 },
-          lastPlayedAt: playedAt ? new Date(playedAt) : new Date(),
-        },
-      });
-
-      // Update player 4 (Team 2 Player 2)
-      await tx.player.update({
-        where: { id: p4.id },
-        data: {
-          eloRating: eloResult.team2Player2.newRating,
-          gamesPlayed: { increment: 1 },
-          wins: { increment: team1Won ? 0 : 1 },
-          losses: { increment: team1Won ? 1 : 0 },
-          lastPlayedAt: playedAt ? new Date(playedAt) : new Date(),
-        },
-      });
+      // Update all 4 players using helper function
+      await updatePlayerStatsInTx(
+        p1.id,
+        eloResult.team1Player1.newRating,
+        team1Won,
+        gameDate,
+        tx
+      );
+      await updatePlayerStatsInTx(
+        p2.id,
+        eloResult.team1Player2.newRating,
+        team1Won,
+        gameDate,
+        tx
+      );
+      await updatePlayerStatsInTx(
+        p3.id,
+        eloResult.team2Player1.newRating,
+        !team1Won,
+        gameDate,
+        tx
+      );
+      await updatePlayerStatsInTx(
+        p4.id,
+        eloResult.team2Player2.newRating,
+        !team1Won,
+        gameDate,
+        tx
+      );
 
       // Create ELO change records
-      await tx.eloChange.create({
-        data: {
-          playerId: p1.id,
-          gameId: newGame.id,
-          previousRating: p1.eloRating,
-          newRating: eloResult.team1Player1.newRating,
-          change: eloResult.team1Player1.change,
-        },
-      });
-
-      await tx.eloChange.create({
-        data: {
-          playerId: p2.id,
-          gameId: newGame.id,
-          previousRating: p2.eloRating,
-          newRating: eloResult.team1Player2.newRating,
-          change: eloResult.team1Player2.change,
-        },
-      });
-
-      await tx.eloChange.create({
-        data: {
-          playerId: p3.id,
-          gameId: newGame.id,
-          previousRating: p3.eloRating,
-          newRating: eloResult.team2Player1.newRating,
-          change: eloResult.team2Player1.change,
-        },
-      });
-
-      await tx.eloChange.create({
-        data: {
-          playerId: p4.id,
-          gameId: newGame.id,
-          previousRating: p4.eloRating,
-          newRating: eloResult.team2Player2.newRating,
-          change: eloResult.team2Player2.change,
-        },
+      await tx.eloChange.createMany({
+        data: [
+          {
+            playerId: p1.id,
+            gameId: newGame.id,
+            previousRating: p1.eloRating,
+            newRating: eloResult.team1Player1.newRating,
+            change: eloResult.team1Player1.change,
+          },
+          {
+            playerId: p2.id,
+            gameId: newGame.id,
+            previousRating: p2.eloRating,
+            newRating: eloResult.team1Player2.newRating,
+            change: eloResult.team1Player2.change,
+          },
+          {
+            playerId: p3.id,
+            gameId: newGame.id,
+            previousRating: p3.eloRating,
+            newRating: eloResult.team2Player1.newRating,
+            change: eloResult.team2Player1.change,
+          },
+          {
+            playerId: p4.id,
+            gameId: newGame.id,
+            previousRating: p4.eloRating,
+            newRating: eloResult.team2Player2.newRating,
+            change: eloResult.team2Player2.change,
+          },
+        ],
       });
 
       return newGame;
@@ -287,124 +279,8 @@ export async function DELETE(request: NextRequest) {
         orderBy: [{ playedAt: "asc" }, { createdAt: "asc" }],
       });
 
-      for (const replayGame of remainingGames) {
-        const playerIds = [
-          replayGame.team1Player1Id,
-          replayGame.team1Player2Id,
-          replayGame.team2Player1Id,
-          replayGame.team2Player2Id,
-        ];
-
-        const currentPlayers = await tx.player.findMany({
-          where: { id: { in: playerIds } },
-        });
-
-        const p1 = currentPlayers.find((p) => p.id === replayGame.team1Player1Id);
-        const p2 = currentPlayers.find((p) => p.id === replayGame.team1Player2Id);
-        const p3 = currentPlayers.find((p) => p.id === replayGame.team2Player1Id);
-        const p4 = currentPlayers.find((p) => p.id === replayGame.team2Player2Id);
-
-        if (!p1 || !p2 || !p3 || !p4) {
-          throw new Error("Replay failed: one or more players not found");
-        }
-
-        // Calculate global ranks for participation bonus
-        const allPlayers = await tx.player.findMany({
-          orderBy: { eloRating: 'desc' }
-        });
-        const totalPlayers = allPlayers.length;
-        const ranks = calculateGlobalRanks(allPlayers);
-
-        const eloResult = processGameElo(
-          {
-            team1Player1: { id: p1.id, eloRating: p1.eloRating, globalRank: ranks.get(p1.id) || 1 },
-            team1Player2: { id: p2.id, eloRating: p2.eloRating, globalRank: ranks.get(p2.id) || 1 },
-            team2Player1: { id: p3.id, eloRating: p3.eloRating, globalRank: ranks.get(p3.id) || 1 },
-            team2Player2: { id: p4.id, eloRating: p4.eloRating, globalRank: ranks.get(p4.id) || 1 },
-          },
-          replayGame.team1Score,
-          replayGame.team2Score,
-          totalPlayers
-        );
-
-        const team1Won = replayGame.team1Score > replayGame.team2Score;
-
-        await tx.player.update({
-          where: { id: p1.id },
-          data: {
-            eloRating: eloResult.team1Player1.newRating,
-            gamesPlayed: { increment: 1 },
-            wins: { increment: team1Won ? 1 : 0 },
-            losses: { increment: team1Won ? 0 : 1 },
-            lastPlayedAt: replayGame.playedAt,
-          },
-        });
-
-        await tx.player.update({
-          where: { id: p2.id },
-          data: {
-            eloRating: eloResult.team1Player2.newRating,
-            gamesPlayed: { increment: 1 },
-            wins: { increment: team1Won ? 1 : 0 },
-            losses: { increment: team1Won ? 0 : 1 },
-            lastPlayedAt: replayGame.playedAt,
-          },
-        });
-
-        await tx.player.update({
-          where: { id: p3.id },
-          data: {
-            eloRating: eloResult.team2Player1.newRating,
-            gamesPlayed: { increment: 1 },
-            wins: { increment: team1Won ? 0 : 1 },
-            losses: { increment: team1Won ? 1 : 0 },
-            lastPlayedAt: replayGame.playedAt,
-          },
-        });
-
-        await tx.player.update({
-          where: { id: p4.id },
-          data: {
-            eloRating: eloResult.team2Player2.newRating,
-            gamesPlayed: { increment: 1 },
-            wins: { increment: team1Won ? 0 : 1 },
-            losses: { increment: team1Won ? 1 : 0 },
-            lastPlayedAt: replayGame.playedAt,
-          },
-        });
-
-        await tx.eloChange.createMany({
-          data: [
-            {
-              playerId: p1.id,
-              gameId: replayGame.id,
-              previousRating: p1.eloRating,
-              newRating: eloResult.team1Player1.newRating,
-              change: eloResult.team1Player1.change,
-            },
-            {
-              playerId: p2.id,
-              gameId: replayGame.id,
-              previousRating: p2.eloRating,
-              newRating: eloResult.team1Player2.newRating,
-              change: eloResult.team1Player2.change,
-            },
-            {
-              playerId: p3.id,
-              gameId: replayGame.id,
-              previousRating: p3.eloRating,
-              newRating: eloResult.team2Player1.newRating,
-              change: eloResult.team2Player1.change,
-            },
-            {
-              playerId: p4.id,
-              gameId: replayGame.id,
-              previousRating: p4.eloRating,
-              newRating: eloResult.team2Player2.newRating,
-              change: eloResult.team2Player2.change,
-            },
-          ],
-        });
+      for (const gameToReplay of remainingGames) {
+        await replayGame(tx, gameToReplay);
       }
     });
 

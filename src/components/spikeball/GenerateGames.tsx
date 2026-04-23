@@ -7,6 +7,7 @@ import {
   Zap,
   ArrowRight,
   Swords,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,6 +52,7 @@ export default function GenerateGames({ players }: GenerateGamesProps) {
   const [matchups, setMatchups] = useState<Matchup[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showAll, setShowAll] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const togglePlayer = (id: string) => {
     const newSet = new Set(selectedPlayerIds);
@@ -107,6 +109,10 @@ export default function GenerateGames({ players }: GenerateGamesProps) {
   };
 
   const displayMatchups = showAll ? matchups : matchups.slice(0, 3);
+
+  const filteredPlayers = players.filter((player) =>
+    player.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const getBalanceColor = (score: number): string => {
     if (score < 20) return "text-green-600";

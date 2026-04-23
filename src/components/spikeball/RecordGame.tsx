@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { PlayerAutocomplete } from "./PlayerAutocomplete";
 
 interface Player {
   id: string;
@@ -51,6 +52,12 @@ export default function RecordGame({ players, onGameRecorded }: RecordGameProps)
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [recentGames, setRecentGames] = useState<any[]>([]);
+  
+  // Display names for selected players
+  const [team1Player1Name, setTeam1Player1Name] = useState("");
+  const [team1Player2Name, setTeam1Player2Name] = useState("");
+  const [team2Player1Name, setTeam2Player1Name] = useState("");
+  const [team2Player2Name, setTeam2Player2Name] = useState("");
 
   const availableForSlot = (slot: string): Player[] => {
     const taken = new Set<string>();
@@ -59,6 +66,27 @@ export default function RecordGame({ players, onGameRecorded }: RecordGameProps)
     if (team2Player1Id && slot !== "t2p1") taken.add(team2Player1Id);
     if (team2Player2Id && slot !== "t2p2") taken.add(team2Player2Id);
     return players.filter((p) => !taken.has(p.id));
+  };
+
+  const handlePlayerSelect = (slot: string, playerId: string, playerName: string) => {
+    switch (slot) {
+      case "t1p1":
+        setTeam1Player1Id(playerId);
+        setTeam1Player1Name(playerName);
+        break;
+      case "t1p2":
+        setTeam1Player2Id(playerId);
+        setTeam1Player2Name(playerName);
+        break;
+      case "t2p1":
+        setTeam2Player1Id(playerId);
+        setTeam2Player1Name(playerName);
+        break;
+      case "t2p2":
+        setTeam2Player2Id(playerId);
+        setTeam2Player2Name(playerName);
+        break;
+    }
   };
 
   const isValid =
@@ -79,6 +107,10 @@ export default function RecordGame({ players, onGameRecorded }: RecordGameProps)
     setTeam2Player2Id("");
     setTeam1Score("");
     setTeam2Score("");
+    setTeam1Player1Name("");
+    setTeam1Player2Name("");
+    setTeam2Player1Name("");
+    setTeam2Player2Name("");
   };
 
   const submitGame = async () => {
@@ -192,39 +224,19 @@ export default function RecordGame({ players, onGameRecorded }: RecordGameProps)
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-muted-foreground">Spieler 1</Label>
-                <Select value={team1Player1Id} onValueChange={setTeam1Player1Id}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Spieler auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableForSlot("t1p1").map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{p.name}</span>
-                          <span className="text-xs text-muted-foreground">({Math.round(p.eloRating)})</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <PlayerAutocomplete 
+                  players={availableForSlot("t1p1")}
+                  onSelect={(id, name) => handlePlayerSelect("t1p1", id, name)}
+                  placeholder={team1Player1Name || "Spieler suchen..."}
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-muted-foreground">Spieler 2</Label>
-                <Select value={team1Player2Id} onValueChange={setTeam1Player2Id}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Spieler auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableForSlot("t1p2").map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{p.name}</span>
-                          <span className="text-xs text-muted-foreground">({Math.round(p.eloRating)})</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <PlayerAutocomplete 
+                  players={availableForSlot("t1p2")}
+                  onSelect={(id, name) => handlePlayerSelect("t1p2", id, name)}
+                  placeholder={team1Player2Name || "Spieler suchen..."}
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-muted-foreground">Punkte</Label>
@@ -265,39 +277,19 @@ export default function RecordGame({ players, onGameRecorded }: RecordGameProps)
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-muted-foreground">Spieler 1</Label>
-                <Select value={team2Player1Id} onValueChange={setTeam2Player1Id}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Spieler auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableForSlot("t2p1").map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{p.name}</span>
-                          <span className="text-xs text-muted-foreground">({Math.round(p.eloRating)})</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <PlayerAutocomplete 
+                  players={availableForSlot("t2p1")}
+                  onSelect={(id, name) => handlePlayerSelect("t2p1", id, name)}
+                  placeholder={team2Player1Name || "Spieler suchen..."}
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-muted-foreground">Spieler 2</Label>
-                <Select value={team2Player2Id} onValueChange={setTeam2Player2Id}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Spieler auswählen..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableForSlot("t2p2").map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        <div className="flex items-center gap-2">
-                          <span>{p.name}</span>
-                          <span className="text-xs text-muted-foreground">({Math.round(p.eloRating)})</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <PlayerAutocomplete 
+                  players={availableForSlot("t2p2")}
+                  onSelect={(id, name) => handlePlayerSelect("t2p2", id, name)}
+                  placeholder={team2Player2Name || "Spieler suchen..."}
+                />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-muted-foreground">Punkte</Label>

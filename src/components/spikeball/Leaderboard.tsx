@@ -198,7 +198,7 @@ export default function Leaderboard({ onRefreshTrigger, currentUser }: Leaderboa
           <Card className="sm:order-2 border-yellow-300 bg-gradient-to-br from-yellow-50 to-amber-50 dark:from-yellow-950/30 dark:to-amber-950/30 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProfileClick(topThree[0]?.id)}>
             <CardContent className="flex flex-col items-center pt-6">
               <Avatar className="h-20 w-20 mb-3 border-4 border-yellow-400 shadow-lg">
-                <AvatarImage src={topThree[0]?.profilePicture} />
+                <AvatarImage src={topThree[0]?.profilePicture ? `/api/images${topThree[0]?.profilePicture}` : undefined} />
                 <AvatarFallback className="text-xl font-bold bg-yellow-100 text-yellow-700">
                   {topThree[0]?.name.charAt(0).toUpperCase()}
                 </AvatarFallback>
@@ -229,7 +229,7 @@ export default function Leaderboard({ onRefreshTrigger, currentUser }: Leaderboa
             <Card className="sm:order-1 border-gray-300 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900/30 dark:to-slate-900/30 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProfileClick(topThree[1]?.id)}>
               <CardContent className="flex flex-col items-center pt-6">
                 <Avatar className="h-16 w-16 mb-2 border-4 border-gray-400 shadow-lg">
-                  <AvatarImage src={topThree[1]?.profilePicture} />
+                  <AvatarImage src={topThree[1]?.profilePicture ? `/api/images${topThree[1]?.profilePicture}` : undefined} />
                   <AvatarFallback className="text-lg font-bold bg-gray-100 text-gray-700">
                     {topThree[1]?.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
@@ -259,7 +259,7 @@ export default function Leaderboard({ onRefreshTrigger, currentUser }: Leaderboa
             <Card className="sm:order-3 border-amber-300 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 cursor-pointer hover:shadow-lg transition-shadow" onClick={() => handleProfileClick(topThree[2]?.id)}>
               <CardContent className="flex flex-col items-center pt-6">
                 <Avatar className="h-16 w-16 mb-2 border-4 border-amber-600 shadow-lg">
-                  <AvatarImage src={topThree[2]?.profilePicture} />
+                  <AvatarImage src={topThree[2]?.profilePicture ? `/api/images${topThree[2]?.profilePicture}` : undefined} />
                   <AvatarFallback className="text-lg font-bold bg-amber-100 text-amber-700">
                     {topThree[2]?.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
@@ -305,7 +305,7 @@ export default function Leaderboard({ onRefreshTrigger, currentUser }: Leaderboa
                       {getRankIcon(player.rank)}
                     </div>
                     <Avatar className="h-10 w-10 shrink-0 border-2 bg-muted text-foreground">
-                      <AvatarImage src={player.profilePicture} />
+                      <AvatarImage src={player.profilePicture ? `/api/images${player.profilePicture}` : undefined} />
                       <AvatarFallback className="font-bold bg-gradient-to-br from-blue-500 to-purple-600 text-white border-none">
                         {player.name.charAt(0).toUpperCase()}
                       </AvatarFallback>
