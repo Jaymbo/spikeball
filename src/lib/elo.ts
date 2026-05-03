@@ -8,6 +8,16 @@
  * 
  * Individual players are rated, but games are played as teams of 2.
  */
+export interface EloBreakdown {
+  expectedAnteil: number;
+  actualAnteil: number;
+  perfDiff: number;
+  duelScore: number;
+  winBonus: number;
+  participationBonus: number;
+  totalChange: number;
+}
+
 // --- NEW CONSTANTS ---
 const K_FACTOR = 28;                      // Performance volatility
 const INITIAL_RATING = 1000;

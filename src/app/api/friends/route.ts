@@ -49,7 +49,7 @@ export async function GET() {
 
     return NextResponse.json(friends);
   } catch (error) {
-    console.error("Error fetching friends:", error);
+    console.error("[Friends] Error fetching friends:", error);
     return NextResponse.json({ error: "Fehler beim Laden der Freunde" }, { status: 500 });
   }
 }
@@ -58,23 +58,18 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
-    console.log("[POST /api/friends] Not authenticated");
     return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 });
   }
 
   try {
-    console.log("[POST /api/friends] Starting request...");
     const body = await req.json();
     const { username } = body;
-    console.log("[POST /api/friends] Request from:", currentUser.username, "to:", username);
 
     if (!username || typeof username !== "string") {
-      console.log("[POST /api/friends] Invalid username:", username);
       return NextResponse.json({ error: "Ungültiger Benutzername" }, { status: 400 });
     }
 
     if (username === currentUser.username) {
-      console.log("[POST /api/friends] Cannot add self:", username);
       return NextResponse.json({ error: "Du kannst dich nicht selbst als Freund hinzufügen" }, { status: 400 });
     }
 
@@ -85,11 +80,8 @@ export async function POST(req: NextRequest) {
     });
 
     if (!receiver) {
-      console.log("[POST /api/friends] User not found:", username);
       return NextResponse.json({ error: "Benutzer nicht gefunden" }, { status: 404 });
     }
-
-    console.log("[POST /api/friends] Found user:", receiver.username, "id:", receiver.id);
 
     // Prüfen ob bereits befreundet oder Anfrage existiert
     const existingFriendship = await db.friendship.findFirst({
@@ -102,7 +94,6 @@ export async function POST(req: NextRequest) {
     });
 
     if (existingFriendship) {
-      console.log("[POST /api/friends] Existing friendship:", existingFriendship.status);
       if (existingFriendship.status === "accepted") {
         return NextResponse.json({ error: "Ihr seid bereits befreundet" }, { status: 400 });
       } else {
@@ -111,7 +102,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Freundschaftsanfrage erstellen
-    console.log("[POST /api/friends] Creating friendship...");
     const friendship = await db.friendship.create({
       data: {
         requesterId: currentUser.userId,
@@ -120,14 +110,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log("[POST /api/friends] Created friendship id:", friendship.id);
-
     return NextResponse.json({ 
       message: "Freundschaftsanfrage gesendet",
-      friendship 
+      friendshipId: friendship.id,
     }, { status: 201 });
   } catch (error) {
-    console.error("[POST /api/friends] Error:", error);
+    console.error("[Friends] Error creating friend request:", error);
     return NextResponse.json({ error: "Fehler beim Senden der Anfrage" }, { status: 500 });
   }
 }
