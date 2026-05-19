@@ -108,6 +108,7 @@ export default function SpikeballPage() {
     { value: "generate", label: "Matchups", icon: Shuffle },
     { value: "history", label: "Verlauf", icon: History },
     { value: "friends", label: "Freunde", icon: UserCheck },
+
     ...(user?.isAdmin ? [
       { value: "players", label: "Spieler", icon: Users },
       { value: "admin", label: "Admin", icon: Settings }
@@ -358,6 +359,28 @@ export default function SpikeballPage() {
               <div className="border rounded-lg p-8 text-center">
                 <p className="text-muted-foreground mb-4">
                   Du musst angemeldet sein, um Freunde zu verwalten.
+                </p>
+                <Button onClick={() => setAuthModalOpen(true)}>
+                  Jetzt anmelden
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="compare" className="mt-6">
+            {user ? (
+              <div className="border rounded-lg p-8 text-center">
+                <p className="text-muted-foreground mb-4">
+                  ELO-Vergleich ist verfügbar unter <a href="/compare" className="text-primary hover:underline">/compare</a>
+                </p>
+                <Button onClick={() => window.location.href = '/compare'}>
+                  Zum Vergleich
+                </Button>
+              </div>
+            ) : (
+              <div className="border rounded-lg p-8 text-center">
+                <p className="text-muted-foreground mb-4">
+                  Du musst angemeldet sein, um ELO-Verläufe zu vergleichen.
                 </p>
                 <Button onClick={() => setAuthModalOpen(true)}>
                   Jetzt anmelden

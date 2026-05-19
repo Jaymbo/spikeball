@@ -34,9 +34,20 @@
 
     (Copy Suggested Edit block verbatim)```
 ---
+**Zeitpunkt:** 2025-01-21
+**Thema:** EloHistoryChart ReferenceError Fix
+**Aktion:** Fehlenden Import für `EloHistoryChart` in `PlayerProfile.tsx` hinzugefügt. Komponente wurde verwendet aber nie importiert.
+**Ergebnis:** Import-Zeile `import { EloHistoryChart } from "./EloHistoryChart";` hinzugefügt. Fehler behoben. Dokumentation in `docs/fix-elohistorychart-not-defined-reference-error.md`.
+---
 
+---
+**Zeitpunkt:** 2025-01-21
+**Thema:** Username Duplicate Validation Check
+**Aktion:** Überprüfung der Registrierungs-API auf doppelte Benutzernamen. Validierung bereits implementiert in `src/app/api/auth/register/route.ts`.
+**Ergebnis:** Die Validierung prüft an zwei Stellen auf Duplikate (User-Tabelle und Player-Tabelle) und gibt HTTP 409 zurück. Dokumentation erstellt in `docs/fix-username-duplicate-validation.md`.
+---
 
-
+---
 **Zeitpunkt:** 2025-01-20
 **Thema:** Code Review & Refactoring - Critical Fixes
 **Aktion:** Umfassendes Code-Review des GPT-generierten Repos. Identifizierung und Behebung kritischer Probleme: ESLint komplett deaktiviert, TypeScript zu locker, Typos im UI, Debug-Logs, Type-Safety Issues.

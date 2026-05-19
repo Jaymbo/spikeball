@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Trophy, Calendar, History, TrendingUp, UserPlus, UserCheck, Clock, UserMinus, X, Settings } from "lucide-react";
+import { Trophy, Calendar, History, TrendingUp, UserPlus, UserCheck, Clock, UserMinus, X, Settings, LineChart, ArrowRight, Users, Plus, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AvatarUpload } from "./AvatarUpload";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 
 import { ProfileSettingsDialog } from "./ProfileSettingsDialog";
+import { EloComparisonChart } from "./EloComparisonChart";
+import { EloHistoryChart } from "./EloHistoryChart";
 import { getCurrentUser } from "@/lib/auth";
 
 interface PlayerProfileProps {
@@ -20,6 +23,13 @@ interface PlayerProfileProps {
   isOwnProfile?: boolean;
   isAdmin?: boolean;
   onClose?: () => void;
+}
+
+interface PlayerEloData {
+  playerId: string;
+  playerName: string;
+  eloHistory: any[];
+  color: string;
 }
 
 export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false, onClose }: PlayerProfileProps) {
@@ -35,6 +45,99 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
   const [friendshipId, setFriendshipId] = useState<string | null>(null);
   const [friendRequestLoading, setFriendRequestLoading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null); // For friend operations
+
+  // Comparison state
+  const [comparePlayers, setComparePlayers] = useState<PlayerEloData[]>([]);
+  const [compareSearchQuery, setCompareSearchQuery] = useState("");
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [showCompareSearch, setShowCompareSearch] = useState(false);
+  const [compareSearchResults, setCompareSearchResults] = useState<Array<{id: string; name: string; eloRating: number}>>([]);
+
+  const COMPARE_COLORS = [
+    "#3b82f6", // blue
+    "#22c55e", // green
+    "#ef4444", // red
+    "#8b5cf6", // purple
+    "#eab308", // yellow
+    "#ec4899", // pink
+    "#06b6d4", // cyan
+    "#f97316", // orange
+  ];
+
+  // Build full comparison data (profile player + added players)
+  const allComparePlayers: PlayerEloData[] = [
+    {
+      playerId: playerId,
+      playerName: playerData?.player?.name || "",
+      eloHistory: playerData?.eloHistory || [],
+      color: "#f97316",
+    },
+    ...comparePlayers,
+  ];
+
+  const addComparePlayer = async (pId: string, pName: string) => {
+    if (pId === playerId) {
+      toast.error("Das ist der Spieler dieses Profils");
+      return;
+    }
+    if (comparePlayers.some(p => p.playerId === pId)) {
+      toast.error("Spieler bereits im Vergleich");
+      return;
+    }
+    if (comparePlayers.length >= 7) {
+      toast.error("Maximal 7 weitere Spieler im Vergleich");
+      return;
+    }
+
+    setCompareLoading(true);
+    try {
+      const res = await fetch(`/api/players/${pId}`);
+      if (!res.ok) throw new Error("Fehler beim Laden");
+      const data = await res.json();
+      
+      setComparePlayers(prev => [...prev, {
+        playerId: data.player.id,
+        playerName: data.player.name,
+        eloHistory: data.eloHistory,
+        color: COMPARE_COLORS[prev.length % COMPARE_COLORS.length],
+      }]);
+      
+      setCompareSearchQuery("");
+      setCompareSearchResults([]);
+      setShowCompareSearch(false);
+      toast.success(`${data.player.name} zum Vergleich hinzugefügt`);
+    } catch (error) {
+      toast.error("Fehler beim Hinzufügen des Spielers");
+    } finally {
+      setCompareLoading(false);
+    }
+  };
+
+  const removeComparePlayer = (pid: string) => {
+    setComparePlayers(prev => prev.filter(p => p.playerId !== pid));
+  };
+
+  const searchComparePlayers = useCallback(async (query: string) => {
+    if (query.length < 2) {
+      setCompareSearchResults([]);
+      return;
+    }
+    try {
+      const res = await fetch("/api/players");
+      if (!res.ok) return;
+      const allPlayers = await res.json();
+      const filtered = allPlayers
+        .filter((p: any) => 
+          p.name.toLowerCase().includes(query.toLowerCase()) && 
+          p.id !== playerId &&
+          !comparePlayers.some(cp => cp.playerId === p.id)
+        )
+        .slice(0, 8);
+      setCompareSearchResults(filtered);
+    } catch (err) {
+      console.error("Error searching players:", err);
+    }
+  }, [playerId, comparePlayers]);
 
   const fetchPlayerData = useCallback(async () => {
     setLoading(true);
@@ -552,14 +655,18 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
 
       {/* Tabs */}
       <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 h-auto">
+        <TabsList className="grid w-full grid-cols-3 h-auto">
           <TabsTrigger value="info" className="gap-2">
             <Trophy className="h-4 w-4" />
             <span className="hidden sm:inline">Info</span>
           </TabsTrigger>
+          <TabsTrigger value="elo" className="gap-2">
+            <LineChart className="h-4 w-4" />
+            <span className="hidden sm:inline">ELO-Verlauf</span>
+          </TabsTrigger>
           <TabsTrigger value="history" className="gap-2">
             <History className="h-4 w-4" />
-            <span className="hidden sm:inline">Verlauf</span>
+            <span className="hidden sm:inline">Spiele</span>
           </TabsTrigger>
         </TabsList>
 
@@ -578,6 +685,129 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
                 <p><strong>Win-Rate:</strong> {winRate}%</p>
                 <p><strong>Mitglied seit:</strong> {new Date(player.createdAt).toLocaleDateString("de-DE")}</p>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="elo" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+                <LineChart className="h-5 w-5" />
+                ELO-Verlauf
+              </CardTitle>
+              <CardDescription>Entwicklung der ELO-Bewertung über die Zeit</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <EloHistoryChart 
+                eloHistory={eloHistory} 
+                playerName={player.name}
+                color="#f97316"
+              />
+            </CardContent>
+          </Card>
+
+          {/* ELO Comparison Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                ELO-Vergleich
+              </CardTitle>
+              <CardDescription>
+                Vergleiche den ELO-Verlauf mit anderen Spielern ({comparePlayers.length}/7 hinzugefügt)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Add player search */}
+              <div className="relative">
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Spieler suchen zum Vergleichen..."
+                      value={compareSearchQuery}
+                      onChange={(e) => {
+                        setCompareSearchQuery(e.target.value);
+                        searchComparePlayers(e.target.value);
+                        setShowCompareSearch(true);
+                      }}
+                      onFocus={() => setShowCompareSearch(true)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+
+                {/* Search results dropdown */}
+                {showCompareSearch && compareSearchResults.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {compareSearchResults.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => addComparePlayer(p.id, p.name)}
+                        className="w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-center gap-3 border-b border-border last:border-0"
+                        disabled={compareLoading}
+                      >
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Users className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="font-medium">{p.name}</span>
+                          <span className="text-sm text-muted-foreground">ELO: {Math.round(p.eloRating)}</span>
+                        </div>
+                        <Plus className="h-4 w-4 ml-auto text-muted-foreground" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Selected comparison players */}
+              {comparePlayers.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {comparePlayers.map((p) => (
+                    <div
+                      key={p.playerId}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full border bg-background"
+                    >
+                      <div
+                        className="h-3 w-3 rounded-full"
+                        style={{ backgroundColor: p.color }}
+                      />
+                      <span className="text-sm font-medium">{p.playerName}</span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-5 w-5 p-0 hover:bg-destructive/10"
+                        onClick={() => removeComparePlayer(p.playerId)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setComparePlayers([]); setCompareSearchResults([]); }}
+                    className="ml-auto text-xs"
+                  >
+                    Alle entfernen
+                  </Button>
+                </div>
+              )}
+
+              {/* Comparison chart */}
+              {comparePlayers.length > 0 ? (
+                <EloComparisonChart
+                  players={allComparePlayers}
+                  onRemovePlayer={removeComparePlayer}
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                  <Users className="h-10 w-10 mb-3 opacity-50" />
+                  <p className="text-sm">Suche Spieler, um ihre ELO-Verläufe zu vergleichen</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

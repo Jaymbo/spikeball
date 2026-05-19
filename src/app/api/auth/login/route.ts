@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyPassword, createToken, needsPasswordMigration, hashPassword } from '@/lib/auth';
-import bcrypt from 'bcryptjs';
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +20,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       // Use timing-safe response to prevent username enumeration
+      const bcrypt = await import('bcryptjs');
       await bcrypt.compare(password, '$2b$12$invalid.hash.for.timing');
       return NextResponse.json(
         { error: 'Ungültige Anmeldedaten' },
@@ -40,15 +40,12 @@ export async function POST(request: NextRequest) {
     // MIGRATION: If old hash detected, migrate to bcrypt immediately
     let needsPasswordChange = user.requiresPasswordChange;
     if (needsPasswordMigration(user.passwordHash)) {
-      console.log(`[Password Migration] Migrating user ${user.username} from old hash to bcrypt`);
-      
-      // Hash with bcrypt and update database
       const newHash = await hashPassword(password);
       await db.user.update({
         where: { id: user.id },
         data: {
           passwordHash: newHash,
-          requiresPasswordChange: true, // Force password change after migration
+          requiresPasswordChange: true,
         },
       });
       
@@ -88,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('[Auth] Login error:', error);
     return NextResponse.json(
       { error: 'Anmeldefehler' },
       { status: 500 }

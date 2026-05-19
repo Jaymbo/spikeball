@@ -29,7 +29,6 @@ export interface JWTPayload {
   userId: string;
   username: string;
   isAdmin: boolean;
-  [key: string]: any; // Index signature for jose compatibility
 }
 
 /**
@@ -60,8 +59,7 @@ export async function hashPassword(password: string): Promise<string> {
 
 /**
  * Verify password against hash (supports BOTH old and new formats)
- * Returns: { isValid: boolean, needsMigration: boolean }
- * - needsMigration: true if old hash format detected and password is valid
+ * Returns true if password matches the hash
  */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   // Try bcrypt first (new system)
@@ -83,7 +81,7 @@ export function needsPasswordMigration(hash: string): boolean {
 
 // Create JWT token
 export async function createToken(payload: JWTPayload): Promise<string> {
-  const token = await new SignJWT(payload)
+  const token = await new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime(TOKEN_EXPIRE)
@@ -95,8 +93,12 @@ export async function createToken(payload: JWTPayload): Promise<string> {
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
     const verified = await jwtVerify(token, JWT_SECRET);
-    return verified.payload as unknown as JWTPayload;
-  } catch (error) {
+    const { userId, username, isAdmin } = verified.payload as Record<string, unknown>;
+    if (typeof userId === 'string' && typeof username === 'string' && typeof isAdmin === 'boolean') {
+      return { userId, username, isAdmin };
+    }
+    return null;
+  } catch {
     return null;
   }
 }
