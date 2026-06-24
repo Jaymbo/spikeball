@@ -46,5 +46,11 @@ dev.log
 prompt
 
 server.log
+
+# SQLite database backups
+db/*.backup*.db
+db/custom_backup_*.db
+*.db-journal
+
 # Skills directory
 /skills/
