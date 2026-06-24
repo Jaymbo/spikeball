@@ -10,7 +10,7 @@ interface EloHistoryEntry {
   newRating: number;
   change: number;
   createdAt: string;
-  game: {
+  game?: {
     id: string;
     team1Score: number;
     team2Score: number;
