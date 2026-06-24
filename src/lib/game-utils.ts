@@ -1,8 +1,5 @@
 import { db } from './db';
 import { processGameElo, calculateGlobalRanks } from './elo';
-import { Prisma } from '@prisma/client';
-
-const INITIAL_RATING = 1000;
 
 export interface PlayerWithElo {
   id: string;
