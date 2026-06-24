@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { EloComparisonChart, type PlayerEloData } from "@/components/profile/EloComparisonChart";
+import { EloComparisonChart } from "@/components/profile/EloComparisonChart";
+import type { PlayerEloData } from "@/components/profile/types";
 import { PlayerAutocomplete } from "@/components/spikeball/PlayerAutocomplete";
 import { usePlayers } from "@/hooks/use-players";
 import { toast } from "sonner";
