@@ -54,7 +54,12 @@ export function AdminPlayers({ players, onPlayersChange }: AdminPlayersProps) {
 
       if (!res.ok) {
         const error = await res.json();
-        toast.error(`Fehler: ${error.error || "Unbekannter Fehler"}`);
+        // Prüfen ob Spieler Spiele hat (Fehlercode 409)
+        if (res.status === 409) {
+          toast.error(error.error || "Spieler hat gespielte Spiele und kann nicht gelöscht werden");
+        } else {
+          toast.error(`Fehler: ${error.error || "Unbekannter Fehler"}`);
+        }
         return;
       }
 
@@ -200,15 +205,23 @@ export function AdminPlayers({ players, onPlayersChange }: AdminPlayersProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Spieler wirklich löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              <div className="flex items-start gap-2 mt-2">
-                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
-                <div>
-                  <p className="font-medium">Achtung!</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Dies wird den Spieler und alle zugehörigen Daten (Spiele, ELO-Verlauf) dauerhaft löschen.
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Diese Aktion kann nicht rückgängig gemacht werden!
+              <div className="space-y-3 mt-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Achtung!</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Dies wird den Spieler und alle zugehörigen Daten dauerhaft löschen.
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Diese Aktion kann nicht rückgängig gemacht werden!
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900 rounded-md p-3">
+                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                    <strong>Hinweis:</strong> Spieler können nur gelöscht werden, wenn sie keine Spiele gespielt haben. 
+                    Falls der Spieler Spiele hat, musst du zuerst diese Spiele löschen.
                   </p>
                 </div>
               </div>

@@ -329,6 +329,7 @@ export default function SpikeballPage() {
               <GameHistory
                 onRefreshTrigger={0}
                 onGameDeleted={handleGameRecorded}
+                isAdmin={user.isAdmin}
               />
             ) : (
               <div className="border rounded-lg p-8 text-center">
