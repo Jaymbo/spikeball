@@ -52,5 +52,14 @@ db/*.backup*.db
 db/custom_backup_*.db
 *.db-journal
 
+# Large workspace / IDE artifacts
+workspace-*.tar
+.continue/
+.backup-code-review-*/
+
+# Backup / log artifacts
+build.log
+*.backup
+
 # Skills directory
 /skills/
