@@ -458,7 +458,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     const recentGames = eloHistory.slice(0, Math.min(5, eloHistory.length));
     
     // Berechne durchschnittliche ELO-Änderung
-    const totalChange = recentGames.reduce((sum, e) => sum + (e.change || 0), 0);
+    const totalChange = recentGames.reduce((sum: number, e: any) => sum + (e.change || 0), 0);
     const avgChange = totalChange / recentGames.length;
     
     // Bestimme Trend-Richtung basierend auf Durchschnitt
