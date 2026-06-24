@@ -127,7 +127,7 @@ export function EloHistoryChart({ eloHistory, playerName = "ELO", color = "#f973
                 height={36}
                 content={({ payload }) => (
                   <div className="flex items-center justify-center gap-2">
-                    {payload?.map((entry: { value: string; color: string }) => (
+                    {payload?.map((entry) => (
                       <div key={entry.value} className="flex items-center gap-2">
                         <div
                           className="h-2 w-2 rounded-full"
