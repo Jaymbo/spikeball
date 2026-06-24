@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Auth-Prüfung - Nur eingeloggte User dürfen Profile sehen
@@ -13,7 +13,8 @@ export async function GET(
       return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 });
     }
 
-    const playerId = params.id;
+    const { id } = await params;
+    const playerId = id;
     
     // Hole den aktuellen Player des eingeloggten Users
     const currentPlayer = await db.player.findFirst({
