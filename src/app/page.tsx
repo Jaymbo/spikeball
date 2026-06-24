@@ -54,7 +54,7 @@ export default function SpikeballPage() {
   const [themeReady, setThemeReady] = useState(false);
 
   // React Query Hooks - ersetzen das Polling
-  const { user, isLoading: isAuthLoading, isAuthenticated, logout } = useAuth();
+  const { user, isLoading: isAuthLoading, isAuthenticated, logout, invalidateAuth } = useAuth();
   const { data: players = [], isLoading: isPlayersLoading } = usePlayers();
   const { data: pendingData } = usePendingFriendRequests();
   const invalidatePlayers = useInvalidatePlayers();
@@ -432,7 +432,7 @@ export default function SpikeballPage() {
         open={authModalOpen}
         onOpenChange={setAuthModalOpen}
         onSuccess={async () => {
-          // React Query wird automatisch neu laden
+          invalidateAuth();
         }}
       />
 
@@ -442,6 +442,7 @@ export default function SpikeballPage() {
         onOpenChange={setShowPasswordDialog}
         onSuccess={() => {
           setShowPasswordDialog(false);
+          invalidateAuth();
         }}
       />
     </div>

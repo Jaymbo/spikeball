@@ -1,26 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { EloComparisonChart } from "@/components/profile/EloComparisonChart";
+import { EloComparisonChart, type PlayerEloData } from "@/components/profile/EloComparisonChart";
 import { PlayerAutocomplete } from "@/components/spikeball/PlayerAutocomplete";
+import { usePlayers } from "@/hooks/use-players";
 import { toast } from "sonner";
-import { Plus, Users, ArrowRight } from "lucide-react";
-
-interface PlayerEloData {
-  playerId: string;
-  playerName: string;
-  eloHistory: any[];
-  color?: string;
-}
+import { Users, ArrowRight } from "lucide-react";
 
 export default function ComparePage() {
   const [selectedPlayers, setSelectedPlayers] = useState<PlayerEloData[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const { data: players = [] } = usePlayers();
 
   const addPlayer = async (playerId: string, playerName: string) => {
     // Check if player already selected
@@ -49,9 +41,7 @@ export default function ComparePage() {
         playerName: data.player.name,
         eloHistory: data.eloHistory,
       }]);
-      
-      setSearchQuery("");
-      setShowAutocomplete(false);
+
       toast.success(`${data.player.name} hinzugefügt`);
     } catch (error) {
       console.error("Error adding player:", error);
@@ -94,26 +84,14 @@ export default function ComparePage() {
           <CardContent className="space-y-4">
             <div className="flex gap-2">
               <div className="flex-1 relative">
-                <Input
-                  placeholder="Spieler suchen..."
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setShowAutocomplete(e.target.value.length > 0);
+                <PlayerAutocomplete
+                  players={players}
+                  onSelect={(playerId, playerName) => {
+                    addPlayer(playerId, playerName);
                   }}
-                  onFocus={() => setShowAutocomplete(searchQuery.length > 0)}
+                  placeholder="Spieler suchen..."
+                  disabled={loading}
                 />
-                {showAutocomplete && (
-                  <div className="absolute z-50 w-full mt-1">
-                    <PlayerAutocomplete
-                      query={searchQuery}
-                      onSelect={(player) => {
-                        addPlayer(player.id, player.name);
-                      }}
-                      onClose={() => setShowAutocomplete(false)}
-                    />
-                  </div>
-                )}
               </div>
             </div>
 

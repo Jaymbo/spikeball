@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import SearchInput from "@/components/ui/search-input";
+import { useInvalidateFriends } from "@/hooks/use-friends";
 
 interface Friend {
   id: string;
@@ -27,6 +28,7 @@ export function FriendList({ refreshTrigger, onRefresh }: FriendListProps) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const invalidateFriends = useInvalidateFriends();
 
   useEffect(() => {
     fetchFriends();
@@ -55,6 +57,7 @@ export function FriendList({ refreshTrigger, onRefresh }: FriendListProps) {
       if (res.ok) {
         toast.success("Freund entfernt");
         setFriends((prev) => prev.filter((f) => f.id !== id));
+        invalidateFriends();
         onRefresh?.();
       } else {
         const data = await res.json();
@@ -117,7 +120,7 @@ export function FriendList({ refreshTrigger, onRefresh }: FriendListProps) {
 
       {filteredFriends.length === 0 ? (
         <div className="text-center text-muted-foreground py-8">
-          <p>Keine Ergebnisse für "{searchQuery}"</p>
+          <p>Keine Ergebnisse für &quot;{searchQuery}&quot;</p>
         </div>
       ) : (
         filteredFriends.map((friend) => (

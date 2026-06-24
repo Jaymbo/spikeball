@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
+  const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
@@ -78,6 +80,7 @@ export function AuthModal({ open, onOpenChange, onSuccess }: AuthModalProps) {
       setFeedback({ type: 'success', message: 'Login erfolgreich.' });
       setUsername('');
       setPassword('');
+      queryClient.invalidateQueries({ queryKey: ['auth'] });
       onOpenChange(false);
 
       if (onSuccess) {

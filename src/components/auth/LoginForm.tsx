@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +36,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
       }
 
       const data = await res.json();
+      queryClient.invalidateQueries({ queryKey: ['auth'] });
 
       if (data.user.requiresPasswordChange) {
         // Redirect to password change
@@ -83,6 +86,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
       setPassword('');
       setPasswordConfirm('');
       setShowRegister(false);
+      queryClient.invalidateQueries({ queryKey: ['auth'] });
       onSuccess?.();
       router.refresh();
     } catch (error) {

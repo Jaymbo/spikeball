@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
@@ -20,11 +19,11 @@ interface EloHistoryEntry {
   } | null;
 }
 
-interface PlayerEloData {
+export interface PlayerEloData {
   playerId: string;
   playerName: string;
   eloHistory: EloHistoryEntry[];
-  color: string;
+  color?: string;
 }
 
 interface EloComparisonChartProps {
@@ -44,8 +43,6 @@ const COLORS = [
 ];
 
 export function EloComparisonChart({ players, onRemovePlayer }: EloComparisonChartProps) {
-  const [hoveredData, setHoveredData] = useState<any>(null);
-
   // Assign colors to players
   const playersWithColors = players.map((player, index) => ({
     ...player,
@@ -57,7 +54,7 @@ export function EloComparisonChart({ players, onRemovePlayer }: EloComparisonCha
 
   // Prepare chart data - align all players by game index
   const chartData = Array.from({ length: maxGames }, (_, index) => {
-    const dataPoint: any = {
+    const dataPoint: Record<string, number | string | null> = {
       index: index + 1,
     };
 
@@ -165,7 +162,7 @@ export function EloComparisonChart({ players, onRemovePlayer }: EloComparisonCha
               height={36}
               content={({ payload }) => (
                 <div className="flex flex-wrap items-center justify-center gap-3">
-                  {payload?.map((entry: any) => (
+                  {payload?.map((entry) => (
                     <div key={entry.value} className="flex items-center gap-2">
                       <div
                         className="h-2 w-2 rounded-full"

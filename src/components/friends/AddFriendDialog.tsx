@@ -14,12 +14,14 @@ import {
 import { UserAutocomplete } from "./UserAutocomplete";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
+import { useInvalidateFriends } from "@/hooks/use-friends";
 
 interface AddFriendDialogProps {
   onSuccess?: () => void;
 }
 
 export function AddFriendDialog({ onSuccess }: AddFriendDialogProps) {
+  const invalidateFriends = useInvalidateFriends();
   const [open, setOpen] = useState(false);
   const [username, setUsername] = useState("");
   const [userId, setUserId] = useState("");
@@ -42,6 +44,7 @@ export function AddFriendDialog({ onSuccess }: AddFriendDialogProps) {
         setUsername("");
         setUserId("");
         setOpen(false);
+        invalidateFriends();
         onSuccess?.();
       } else {
         const data = await res.json();

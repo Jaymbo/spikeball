@@ -18,7 +18,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 
@@ -34,10 +33,11 @@ interface Player {
 
 interface AdminPlayersProps {
   players: Player[];
-  onPlayersChange: () => void;
+  onPlayersChange?: () => void;
 }
 
 export function AdminPlayers({ players, onPlayersChange }: AdminPlayersProps) {
+  const notifyChange = () => onPlayersChange?.();
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [editPlayer, setEditPlayer] = useState<Player | null>(null);
   const [newName, setNewName] = useState("");
@@ -60,7 +60,7 @@ export function AdminPlayers({ players, onPlayersChange }: AdminPlayersProps) {
 
       toast.success("Spieler erfolgreich gelöscht");
       setDeleteConfirm(null);
-      onPlayersChange();
+      notifyChange();
     } catch (err) {
       console.error("Error deleting player:", err);
       toast.error("Fehler beim Löschen des Spielers");
@@ -92,7 +92,7 @@ export function AdminPlayers({ players, onPlayersChange }: AdminPlayersProps) {
       toast.success("Spielername erfolgreich geändert");
       setEditPlayer(null);
       setNewName("");
-      onPlayersChange();
+      notifyChange();
     } catch (err) {
       console.error("Error renaming player:", err);
       toast.error("Fehler beim Ändern des Spielernamens");

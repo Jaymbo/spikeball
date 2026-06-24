@@ -357,7 +357,7 @@ export function generateRoundRobin(
 
   // Simple round-robin: pair up adjacent players after rotation
   const players = [...playerIds];
-  let round = 1;
+  const round = 1;
 
   // For each round, generate games from available players
   const numGames = Math.floor(players.length / 2);

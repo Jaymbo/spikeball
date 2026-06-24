@@ -17,6 +17,7 @@ import { ProfileSettingsDialog } from "./ProfileSettingsDialog";
 import { EloComparisonChart } from "./EloComparisonChart";
 import { EloHistoryChart } from "./EloHistoryChart";
 import { getCurrentUser } from "@/lib/auth";
+import { useInvalidateFriends } from "@/hooks/use-friends";
 
 interface PlayerProfileProps {
   playerId: string;
@@ -45,6 +46,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
   const [friendshipId, setFriendshipId] = useState<string | null>(null);
   const [friendRequestLoading, setFriendRequestLoading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null); // For friend operations
+  const invalidateFriends = useInvalidateFriends();
 
   // Comparison state
   const [comparePlayers, setComparePlayers] = useState<PlayerEloData[]>([]);
@@ -205,6 +207,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
 
       toast.success("Freundschaftsanfrage gesendet!");
       setFriendRequestType("outgoing");
+      invalidateFriends();
       // Refresh data to get updated status
       await fetchPlayerData();
     } catch (err) {
@@ -237,6 +240,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
         toast.success("Freundschaft angenommen!");
         setFriendRequestType("accepted");
         setIsFriend(true);
+        invalidateFriends();
         await fetchPlayerData();
       } else {
         throw new Error("Annehmen fehlgeschlagen");
@@ -265,6 +269,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       if (rejectRes.ok) {
         toast.success("Anfrage abgelehnt");
         setFriendRequestType(null);
+        invalidateFriends();
         await fetchPlayerData();
       } else {
         throw new Error("Ablehnen fehlgeschlagen");
@@ -293,6 +298,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       if (cancelRes.ok) {
         toast.success("Anfrage zurückgezogen");
         setFriendRequestType(null);
+        invalidateFriends();
         await fetchPlayerData();
       } else {
         throw new Error("Zurückziehen fehlgeschlagen");
@@ -322,6 +328,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
         toast.success("Freund entfernt");
         setFriendRequestType(null);
         setIsFriend(false);
+        invalidateFriends();
         await fetchPlayerData();
       } else {
         throw new Error("Entfernen fehlgeschlagen");

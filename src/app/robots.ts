@@ -5,9 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: '/api/',
-      disallow: '/admin/',
-      disallow: '/login',
+      disallow: ['/api/', '/admin/', '/login'],
     },
     sitemap: 'https://spikeball.ddns.net/sitemap.xml',
   }

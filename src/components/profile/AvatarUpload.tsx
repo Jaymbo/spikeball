@@ -6,8 +6,7 @@ import { toast } from "sonner";
 import { Upload, X, Crop as CropIcon } from "lucide-react";
 import Image from "next/image";
 import ReactCrop, { type Crop as CropType, PixelCrop } from "react-image-crop";
-// CSS wird global in globals.css importiert
-// @ts-ignore - Bibliothek liefert keine Type-Deklaration für CSS
+import { useInvalidatePlayers } from "@/hooks/use-players";
 import "react-image-crop/dist/ReactCrop.css";
 
 interface AvatarUploadProps {
@@ -17,6 +16,7 @@ interface AvatarUploadProps {
 }
 
 export function AvatarUpload({ playerId, currentImage, onSuccess }: AvatarUploadProps) {
+  const invalidatePlayers = useInvalidatePlayers();
   const [preview, setPreview] = useState<string | null>(null);
   // aspect wird nicht als Property im crop-Objekt verwendet
   const [crop, setCrop] = useState<CropType>({
@@ -83,7 +83,7 @@ export function AvatarUpload({ playerId, currentImage, onSuccess }: AvatarUpload
     }
   };
 
-  const getCroppedImg = (image: HTMLImageElement, crop: PixelCrop, fileName: string): Promise<Blob> => {
+  const getCroppedImg = (image: HTMLImageElement, crop: PixelCrop, _fileName: string): Promise<Blob> => {
     const canvas = document.createElement('canvas');
     const scaleX = image.naturalWidth / image.width;
     const scaleY = image.naturalHeight / image.height;
@@ -159,6 +159,7 @@ export function AvatarUpload({ playerId, currentImage, onSuccess }: AvatarUpload
       if (res.ok) {
         const data = await res.json();
         onSuccess(data.path);
+        invalidatePlayers();
         setPreview(null);
         setCrop({
           unit: '%',

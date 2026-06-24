@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -9,6 +9,11 @@ node_modules
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+
+# package manager lockfiles (keep only package-lock.json in repo)
+bun.lock
+pnpm-lock.yaml
+yarn.lock
 
 # testing
 /coverage
@@ -30,8 +35,15 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# runtime logs
+*.log
+*.out
+*.pid
+
+# env files
+.env
+.env.*
+!.env.example
 
 # vercel
 .vercel
@@ -39,27 +51,25 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local / IDE artifacts
 local-*
 .claude
 .z-ai-config
-dev.log
-prompt
-
-server.log
-
-# SQLite database backups
-db/*.backup*.db
-db/custom_backup_*.db
-*.db-journal
-
-# Large workspace / IDE artifacts
-workspace-*.tar
 .continue/
-.backup-code-review-*/
+.vscode/settings.json
+workspace-*.tar
 
-# Backup / log artifacts
-build.log
+# database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# backups / artifacts
 *.backup
+backups/
+.backup-*/
 
 # Skills directory
 /skills/
