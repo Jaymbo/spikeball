@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Trophy, Calendar, History, TrendingUp, UserPlus, UserCheck, Clock, UserMinus, X, Settings, LineChart, ArrowRight, Users, Plus, Search } from "lucide-react";
+import { Trophy, Calendar, History, TrendingUp, TrendingDown, UserPlus, UserCheck, Clock, UserMinus, X, Settings, LineChart, ArrowRight, Users, Plus, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AvatarUpload } from "./AvatarUpload";
 import { Button } from "@/components/ui/button";
