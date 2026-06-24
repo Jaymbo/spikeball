@@ -17,39 +17,13 @@ import { ProfileSettingsDialog } from "./ProfileSettingsDialog";
 import { EloComparisonChart } from "./EloComparisonChart";
 import { EloHistoryChart } from "./EloHistoryChart";
 import { useInvalidateFriends } from "@/hooks/use-friends";
+import type { Game, EloHistoryEntry, PlayerEloData } from "./types";
 
 interface PlayerProfileProps {
   playerId: string;
   isOwnProfile?: boolean;
   isAdmin?: boolean;
   onClose?: () => void;
-}
-
-interface Game {
-  id: string;
-  team1Player1: { id: string; name: string; eloRating: number };
-  team1Player2: { id: string; name: string; eloRating: number };
-  team2Player1: { id: string; name: string; eloRating: number };
-  team2Player2: { id: string; name: string; eloRating: number };
-  team1Score: number;
-  team2Score: number;
-  playedAt: string;
-}
-
-interface EloHistoryEntry {
-  id: string;
-  change: number;
-  newRating: number;
-  previousRating: number;
-  createdAt: string;
-  game?: Game | null;
-}
-
-interface PlayerEloData {
-  playerId: string;
-  playerName: string;
-  eloHistory: EloHistoryEntry[];
-  color: string;
 }
 
 interface PlayerData {

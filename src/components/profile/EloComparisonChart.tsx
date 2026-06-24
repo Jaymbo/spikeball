@@ -4,27 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Lege
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-
-interface EloHistoryEntry {
-  id: string;
-  previousRating: number;
-  newRating: number;
-  change: number;
-  createdAt: string;
-  game: {
-    id: string;
-    team1Score: number;
-    team2Score: number;
-    playedAt: string;
-  } | null;
-}
-
-export interface PlayerEloData {
-  playerId: string;
-  playerName: string;
-  eloHistory: EloHistoryEntry[];
-  color?: string;
-}
+import type { PlayerEloData } from "./types";
 
 interface EloComparisonChartProps {
   players: PlayerEloData[];

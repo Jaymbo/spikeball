@@ -3,20 +3,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { TrendingUp, TrendingDown } from "lucide-react";
-
-interface EloHistoryEntry {
-  id: string;
-  previousRating: number;
-  newRating: number;
-  change: number;
-  createdAt: string;
-  game?: {
-    id: string;
-    team1Score: number;
-    team2Score: number;
-    playedAt: string;
-  } | null;
-}
+import type { EloHistoryEntry } from "./types";
 
 interface EloHistoryChartProps {
   eloHistory: EloHistoryEntry[];
