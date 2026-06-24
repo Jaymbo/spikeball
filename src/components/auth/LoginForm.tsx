@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 
 export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -45,7 +43,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
         onSuccess?.();
         router.refresh();
       }
-    } catch (_error) {
+    } catch {
       toast.error('Anmeldefehler');
     }
   };
@@ -86,7 +84,7 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
       setShowRegister(false);
       onSuccess?.();
       router.refresh();
-    } catch (_error) {
+    } catch {
       toast.error('Registrierungsfehler');
     }
   };

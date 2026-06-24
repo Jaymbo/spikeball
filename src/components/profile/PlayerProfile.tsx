@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Trophy, Calendar, History, TrendingUp, TrendingDown, UserPlus, UserCheck, Clock, UserMinus, X, Settings, LineChart, Users, Plus, Search } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AvatarUpload } from "./AvatarUpload";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,31 +24,58 @@ interface PlayerProfileProps {
   onClose?: () => void;
 }
 
+interface Game {
+  id: string;
+  team1Player1: { id: string; name: string; eloRating: number };
+  team1Player2: { id: string; name: string; eloRating: number };
+  team2Player1: { id: string; name: string; eloRating: number };
+  team2Player2: { id: string; name: string; eloRating: number };
+  team1Score: number;
+  team2Score: number;
+  playedAt: string;
+}
+
+interface EloHistoryEntry {
+  change: number;
+  newRating: number;
+  previousRating: number;
+  createdAt: string;
+  game?: Game | null;
+}
+
 interface PlayerEloData {
   playerId: string;
   playerName: string;
-  eloHistory: Array<{
-    change: number;
-    newRating: number;
-    previousRating: number;
-    createdAt: string;
-    game?: any;
-  }>;
+  eloHistory: EloHistoryEntry[];
   color: string;
 }
 
-export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false, onClose: _onClose }: PlayerProfileProps) {
+interface PlayerData {
+  id: string;
+  name: string;
+  eloRating: number;
+  gamesPlayed: number;
+  wins: number;
+  losses: number;
+  profilePicture: string | null;
+  createdAt: string;
+  lastPlayedAt: string | null;
+}
+
+interface PlayerProfileData {
+  player: PlayerData;
+  eloHistory: EloHistoryEntry[];
+  gameHistory: Game[];
+  isFriend: boolean;
+  friendRequestType: string | null;
+  friendshipId: string | null;
+  isOwnProfile: boolean;
+}
+
+export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false }: PlayerProfileProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [playerData, setPlayerData] = useState<{
-    player: any;
-    eloHistory: any[];
-    gameHistory: any[];
-    isFriend: boolean;
-    friendRequestType: string | null;
-    friendshipId: string | null;
-    isOwnProfile: boolean;
-  } | null>(null);
+  const [playerData, setPlayerData] = useState<PlayerProfileData | null>(null);
   
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -90,7 +116,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     ...comparePlayers,
   ];
 
-  const addComparePlayer = async (pId: string, _pName: string) => {
+  const addComparePlayer = async (pId: string, _playerName: string) => {
     if (pId === playerId) {
       toast.error("Das ist der Spieler dieses Profils");
       return;
@@ -121,7 +147,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       setCompareSearchResults([]);
       setShowCompareSearch(false);
       toast.success(`${data.player.name} zum Vergleich hinzugefügt`);
-    } catch (error) {
+    } catch (_error) {
       toast.error("Fehler beim Hinzufügen des Spielers");
     } finally {
       setCompareLoading(false);
@@ -178,7 +204,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       setFriendRequestType(data.friendRequestType || null);
       setFriendshipId(data.friendshipId || null);
       setIsActuallyOwnProfile(data.isOwnProfile || false);
-    } catch (_err) {
+    } catch (_error) {
       setError("Fehler beim Laden");
       toast.error("Profil konnte nicht geladen werden");
     } finally {
@@ -372,12 +398,12 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     });
   };
 
-  const handleUploadSuccess = (_newPath: string) => {
+  const handleUploadSuccess = (newPath: string) => {
     if (!playerData) return;
     
     setPlayerData({
       ...playerData,
-      player: { ...playerData.player, profilePicture: _newPath },
+      player: { ...playerData.player, profilePicture: newPath },
     });
     setUploadDialogOpen(false);
     toast.success("Profilbild erfolgreich hochgeladen");
@@ -464,7 +490,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     const recentGames = eloHistory.slice(0, Math.min(5, eloHistory.length));
     
     // Berechne durchschnittliche ELO-Änderung
-    const totalChange = recentGames.reduce((sum: number, e: any) => sum + (e.change || 0), 0);
+    const totalChange = recentGames.reduce((sum: number, e: EloHistoryEntry) => sum + (e.change || 0), 0);
     const avgChange = totalChange / recentGames.length;
     
     // Bestimme Trend-Richtung basierend auf Durchschnitt
@@ -867,7 +893,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
             <CardContent>
               {gameHistory.length > 0 ? (
                 <div className="space-y-3">
-                  {gameHistory.slice(0, 10).map((game: any) => {
+                  {gameHistory.slice(0, 10).map((game: Game) => {
                     const isTeam1Player = game.team1Player1.id === playerId || game.team1Player2.id === playerId;
                     const team1Score = isTeam1Player ? game.team1Score : game.team2Score;
                     const team2Score = isTeam1Player ? game.team2Score : game.team1Score;
@@ -876,7 +902,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
                     
                     // Finde ELO-Change für diesen Spieler in diesem Spiel
                     const playerEloChange = eloHistory.find(
-                      (e: any) => e.game?.id === game.id
+                      (e: EloHistoryEntry) => e.game?.id === game.id
                     );
                     const eloChange = playerEloChange?.change || 0;
                     
