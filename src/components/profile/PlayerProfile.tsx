@@ -451,14 +451,14 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     : "0.0";
 
   // Berechne Trend basierend auf letzten 5 Spielen (statt nur letztem Spiel)
-  const calculateTrend = () => {
-    if (eloHistory.length === 0) return { change: 0, isPositive: true };
+  const trend = (() => {
+    if (!eloHistory || eloHistory.length === 0) return { change: 0, isPositive: true, gamesCount: 0 };
     
     // Nimm letzte 5 Spiele
     const recentGames = eloHistory.slice(0, Math.min(5, eloHistory.length));
     
     // Berechne durchschnittliche ELO-Änderung
-    const totalChange = recentGames.reduce((sum, e) => sum + e.change, 0);
+    const totalChange = recentGames.reduce((sum, e) => sum + (e.change || 0), 0);
     const avgChange = totalChange / recentGames.length;
     
     // Bestimme Trend-Richtung basierend auf Durchschnitt
@@ -471,9 +471,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       gamesCount: recentGames.length,
       avgChange 
     };
-  };
-
-  const trend = calculateTrend();
+  })();
 
   // DEBUG: Log all friendship status values being used for rendering
   // console.log("[PlayerProfile rendering] State values:", {
