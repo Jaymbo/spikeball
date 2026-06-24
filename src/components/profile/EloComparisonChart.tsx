@@ -118,10 +118,10 @@ export function EloComparisonChart({ players, onRemovePlayer }: EloComparisonCha
             />
             <ChartTooltip
               content={<ChartTooltipContent />}
-              formatter={(value: number, name: string) => {
+              formatter={(value, name) => {
                 const player = playersWithColors.find(p => p.playerId === name);
-                if (!player || value === null) return [null, null];
-                return [`${value.toFixed(1)} ELO`, player.playerName];
+                if (!player || value === null || value === undefined) return [null, null];
+                return [`${Number(value).toFixed(1)} ELO`, player.playerName];
               }}
               labelFormatter={(label, payload) => {
                 const entry = payload?.[0]?.payload;

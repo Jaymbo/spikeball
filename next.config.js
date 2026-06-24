@@ -1,12 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  // output: "standalone", // Temporarily disabled to fix Html import bug
   reactStrictMode: true,
   poweredByHeader: false,
   images: {
     unoptimized: true,
   },
-  // Disable static generation of error pages to avoid Html import bug
   experimental: {
     forceSwcTransforms: true,
   },

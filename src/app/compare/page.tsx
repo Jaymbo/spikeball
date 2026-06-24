@@ -41,6 +41,7 @@ export default function ComparePage() {
         playerId: data.player.id,
         playerName: data.player.name,
         eloHistory: data.eloHistory,
+        color: "#3b82f6",
       }]);
 
       toast.success(`${data.player.name} hinzugefügt`);

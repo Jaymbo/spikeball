@@ -93,8 +93,8 @@ export function EloHistoryChart({ eloHistory, playerName = "ELO", color = "#f973
             />
             <ChartTooltip
               content={<ChartTooltipContent />}
-              formatter={(value: number, name: string) => [
-                `${value.toFixed(1)} ELO`,
+              formatter={(value, name) => [
+                `${Number(value).toFixed(1)} ELO`,
                 playerName,
               ]}
               labelFormatter={(label, payload) => {
