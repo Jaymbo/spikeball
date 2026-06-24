@@ -277,7 +277,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Auth-Prüfung - Nur eingeloggte User dürfen ihr eigenes Profil bearbeiten
@@ -286,7 +286,8 @@ export async function PATCH(
       return NextResponse.json({ error: "Nicht authentifiziert" }, { status: 401 });
     }
 
-    const playerId = params.id;
+    const { id } = await params;
+    const playerId = id;
     
     // Hole den aktuellen Player des eingeloggten Users
     const currentPlayer = await db.player.findFirst({
