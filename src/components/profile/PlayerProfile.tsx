@@ -492,7 +492,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
           <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
             {/* Avatar Section */}
             <div className="relative mx-auto sm:mx-0">
-              <Avatar className="h-20 w-20 <sm:h-24 sm:w-24 border-4 border-background shadow-lg">
+              <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-background shadow-lg">
                 <AvatarImage src={player.profilePicture ? `/api/images${player.profilePicture}` : undefined} alt={player.name} />
                 <AvatarFallback className="text-2xl sm:text-3xl bg-gradient-to-br from-orange-400 to-orange-600 text-white">
                   {player.name.slice(0, 2).toUpperCase()}
