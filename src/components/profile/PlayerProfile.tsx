@@ -37,6 +37,7 @@ interface Game {
 }
 
 interface EloHistoryEntry {
+  id: string;
   change: number;
   newRating: number;
   previousRating: number;
