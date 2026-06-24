@@ -43,8 +43,9 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
         setRequests(data);
         onPendingCountChange?.(data.length);
       }
-    } catch (error) {
-      console.error("Error fetching friend requests:", error);
+    } catch (_error) {
+      setLoading(false);
+      return;
     } finally {
       setLoading(false);
     }
@@ -59,8 +60,7 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
       onPendingCountChange?.(updated.length);
       invalidateFriends();
       onRefresh?.();
-    } catch (error) {
-      console.error("Error accepting friend request:", error);
+    } catch (_error) {
       toast.error("Fehler beim Akzeptieren");
     }
   };
@@ -73,8 +73,7 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
       setRequests(updated);
       onPendingCountChange?.(updated.length);
       invalidateFriends();
-    } catch (error) {
-      console.error("Error rejecting friend request:", error);
+    } catch (_error) {
       toast.error("Fehler beim Ablehnen");
     }
   };

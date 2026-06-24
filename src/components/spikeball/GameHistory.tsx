@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   History,
-  Trophy,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -12,7 +11,7 @@ import {
   ChevronUp,
   RefreshCw,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -89,8 +88,9 @@ export default function GameHistory({ onRefreshTrigger, onGameDeleted, isAdmin }
         setGames(data.games);
         setTotal(data.total);
       }
-    } catch (err) {
-      console.error("Error fetching games:", err);
+    } catch (_error) {
+      setLoading(false);
+      return;
     } finally {
       setLoading(false);
     }

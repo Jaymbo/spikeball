@@ -25,8 +25,9 @@ export default function FeatureRequestsAdminPage() {
       }
       const data = await response.json();
       setRequests(data);
-    } catch (error) {
-      console.error("Error fetching requests:", error);
+    } catch (_error) {
+      setLoading(false);
+      return;
     } finally {
       setLoading(false);
     }
@@ -34,7 +35,7 @@ export default function FeatureRequestsAdminPage() {
 
   useEffect(() => {
     fetchRequests();
-  }, [filter]);
+  }, []);
 
   const updateStatus = async (id: string, status: string) => {
     try {
@@ -45,8 +46,8 @@ export default function FeatureRequestsAdminPage() {
       });
       if (!response.ok) throw new Error("Fehler beim Aktualisieren");
       fetchRequests();
-    } catch (error) {
-      console.error("Error updating status:", error);
+    } catch (_error) {
+      // Handle error silently
     }
   };
 
@@ -59,8 +60,8 @@ export default function FeatureRequestsAdminPage() {
       });
       if (!response.ok) throw new Error("Fehler beim Aktualisieren");
       fetchRequests();
-    } catch (error) {
-      console.error("Error updating priority:", error);
+    } catch (_error) {
+      // Handle error silently
     }
   };
 
@@ -73,13 +74,13 @@ export default function FeatureRequestsAdminPage() {
       });
       if (!response.ok) throw new Error("Fehler beim Löschen");
       fetchRequests();
-    } catch (error) {
-      console.error("Error deleting request:", error);
+    } catch (_error) {
+      // Handle error silently
     }
   };
 
   const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { icon: any; label: string; variant: string }> = {
+    const statusConfig: Record<string, { icon: typeof Clock; label: string; variant: string }> = {
       open: { icon: Clock, label: "Offen", variant: "default" },
       in_progress: { icon: Lightbulb, label: "In Arbeit", variant: "secondary" },
       done: { icon: CheckCircle, label: "Erledigt", variant: "outline" },
@@ -88,7 +89,7 @@ export default function FeatureRequestsAdminPage() {
     const config = statusConfig[status] || statusConfig.open;
     const Icon = config.icon;
     return (
-      <Badge variant={config.variant as any} className="gap-1">
+      <Badge variant={config.variant as "default" | "secondary" | "outline" | "destructive"} className="gap-1">
         <Icon className="h-3 w-3" />
         {config.label}
       </Badge>

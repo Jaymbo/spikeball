@@ -66,8 +66,7 @@ export function AdminPlayers({ players, onPlayersChange }: AdminPlayersProps) {
       toast.success("Spieler erfolgreich gelöscht");
       setDeleteConfirm(null);
       notifyChange();
-    } catch (err) {
-      console.error("Error deleting player:", err);
+    } catch (_error) {
       toast.error("Fehler beim Löschen des Spielers");
     } finally {
       setLoading(false);
@@ -98,8 +97,7 @@ export function AdminPlayers({ players, onPlayersChange }: AdminPlayersProps) {
       setEditPlayer(null);
       setNewName("");
       notifyChange();
-    } catch (err) {
-      console.error("Error renaming player:", err);
+    } catch (_error) {
       toast.error("Fehler beim Ändern des Spielernamens");
     } finally {
       setLoading(false);
@@ -129,8 +127,7 @@ export function AdminPlayers({ players, onPlayersChange }: AdminPlayersProps) {
       toast.success("Passwort erfolgreich zurückgesetzt");
       setResetPasswordPlayer(null);
       setNewPassword("");
-    } catch (err) {
-      console.error("Error resetting password:", err);
+    } catch (_error) {
       toast.error("Fehler beim Zurücksetzen des Passworts");
     } finally {
       setLoading(false);

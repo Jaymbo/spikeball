@@ -50,8 +50,7 @@ export function AddFriendDialog({ onSuccess }: AddFriendDialogProps) {
         const data = await res.json();
         toast.error(data.error || "Fehler beim Senden der Anfrage");
       }
-    } catch (error) {
-      console.error("Error sending friend request:", error);
+    } catch (_error) {
       toast.error("Fehler beim Senden der Anfrage");
     } finally {
       setLoading(false);

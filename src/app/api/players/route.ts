@@ -1,7 +1,6 @@
 import { db } from "@/lib/db";
 import { getCurrentUser, hashPassword } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
-import { User } from "@prisma/client";
 
 // GET /api/players - List all players
 export async function GET() {
@@ -70,7 +69,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userModel = (db as unknown as any).user;
+    const userModel = (db as unknown as { user: any }).user;
     if (!userModel) {
       return NextResponse.json(
         { error: "User model not available" },
@@ -163,7 +162,7 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      const playerWithUser = player as any;
+      const playerWithUser = player as { userId: string | null };
       if (!playerWithUser.userId) {
         return NextResponse.json(
           { error: "Cannot reset password for player without user account" },
@@ -300,7 +299,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Player not found" }, { status: 404 });
     }
 
-    const playerAny = player as any;
+    const playerAny = player as { userId: string | null };
 
     if (player.name.toLowerCase() === "root") {
       return NextResponse.json({ error: "Root kann nicht gelöscht werden" }, { status: 403 });

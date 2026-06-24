@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Trophy, Calendar, History, TrendingUp, TrendingDown, UserPlus, UserCheck, Clock, UserMinus, X, Settings, LineChart, ArrowRight, Users, Plus, Search } from "lucide-react";
+import { Trophy, Calendar, History, TrendingUp, TrendingDown, UserPlus, UserCheck, Clock, UserMinus, X, Settings, LineChart, Users, Plus, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AvatarUpload } from "./AvatarUpload";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,6 @@ import { toast } from "sonner";
 import { ProfileSettingsDialog } from "./ProfileSettingsDialog";
 import { EloComparisonChart } from "./EloComparisonChart";
 import { EloHistoryChart } from "./EloHistoryChart";
-import { getCurrentUser } from "@/lib/auth";
 import { useInvalidateFriends } from "@/hooks/use-friends";
 
 interface PlayerProfileProps {
@@ -29,14 +28,28 @@ interface PlayerProfileProps {
 interface PlayerEloData {
   playerId: string;
   playerName: string;
-  eloHistory: any[];
+  eloHistory: Array<{
+    change: number;
+    newRating: number;
+    previousRating: number;
+    createdAt: string;
+    game?: any;
+  }>;
   color: string;
 }
 
-export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false, onClose }: PlayerProfileProps) {
+export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false, onClose: _onClose }: PlayerProfileProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [playerData, setPlayerData] = useState<any>(null);
+  const [playerData, setPlayerData] = useState<{
+    player: any;
+    eloHistory: any[];
+    gameHistory: any[];
+    isFriend: boolean;
+    friendRequestType: string | null;
+    friendshipId: string | null;
+    isOwnProfile: boolean;
+  } | null>(null);
   
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -77,7 +90,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     ...comparePlayers,
   ];
 
-  const addComparePlayer = async (pId: string, pName: string) => {
+  const addComparePlayer = async (pId: string, _pName: string) => {
     if (pId === playerId) {
       toast.error("Das ist der Spieler dieses Profils");
       return;
@@ -129,15 +142,15 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       if (!res.ok) return;
       const allPlayers = await res.json();
       const filtered = allPlayers
-        .filter((p: any) => 
+        .filter((p: { name: string; id: string }) => 
           p.name.toLowerCase().includes(query.toLowerCase()) && 
           p.id !== playerId &&
           !comparePlayers.some(cp => cp.playerId === p.id)
         )
         .slice(0, 8);
       setCompareSearchResults(filtered);
-    } catch (err) {
-      console.error("Error searching players:", err);
+    } catch (_err) {
+      // Error handling
     }
   }, [playerId, comparePlayers]);
 
@@ -165,10 +178,8 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       setFriendRequestType(data.friendRequestType || null);
       setFriendshipId(data.friendshipId || null);
       setIsActuallyOwnProfile(data.isOwnProfile || false);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Unknown error";
-      console.error("[PlayerProfile] Error fetching data:", err);
-      setError(errorMessage);
+    } catch (_err) {
+      setError("Fehler beim Laden");
       toast.error("Profil konnte nicht geladen werden");
     } finally {
       setLoading(false);
@@ -183,8 +194,8 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
         const data = await res.json();
         setCurrentUserId(data.currentPlayerId);
       }
-    } catch (err) {
-      console.error("[PlayerProfile] Error fetching current user:", err);
+    } catch {
+      // Silent fail - not critical
     }
   }, []);
 
@@ -210,8 +221,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       invalidateFriends();
       // Refresh data to get updated status
       await fetchPlayerData();
-    } catch (err) {
-      console.error("[PlayerProfile] Error sending friend request:", err);
+    } catch {
       toast.error("Fehler beim Senden der Anfrage");
     } finally {
       setFriendRequestLoading(false);
@@ -245,8 +255,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       } else {
         throw new Error("Annehmen fehlgeschlagen");
       }
-    } catch (err) {
-      console.error("Error accepting friend request:", err);
+    } catch {
       toast.error("Fehler beim Annehmen der Anfrage");
     } finally {
       setFriendRequestLoading(false);
@@ -274,8 +283,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       } else {
         throw new Error("Ablehnen fehlgeschlagen");
       }
-    } catch (err) {
-      console.error("Error rejecting friend request:", err);
+    } catch {
       toast.error("Fehler beim Ablehnen der Anfrage");
     } finally {
       setFriendRequestLoading(false);
@@ -303,8 +311,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       } else {
         throw new Error("Zurückziehen fehlgeschlagen");
       }
-    } catch (err) {
-      console.error("Error canceling friend request:", err);
+    } catch {
       toast.error("Fehler beim Zurückziehen der Anfrage");
     } finally {
       setFriendRequestLoading(false);
@@ -333,8 +340,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       } else {
         throw new Error("Entfernen fehlgeschlagen");
       }
-    } catch (err) {
-      console.error("Error removing friend:", err);
+    } catch {
       toast.error("Fehler beim Entfernen");
     } finally {
       setFriendRequestLoading(false);
@@ -366,12 +372,12 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     });
   };
 
-  const handleUploadSuccess = (newPath: string) => {
+  const handleUploadSuccess = (_newPath: string) => {
     if (!playerData) return;
     
     setPlayerData({
       ...playerData,
-      player: { ...playerData.player, profilePicture: newPath },
+      player: { ...playerData.player, profilePicture: _newPath },
     });
     setUploadDialogOpen(false);
     toast.success("Profilbild erfolgreich hochgeladen");

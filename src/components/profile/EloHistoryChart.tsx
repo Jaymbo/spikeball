@@ -1,6 +1,6 @@
 "use client";
 
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
@@ -127,7 +127,7 @@ export function EloHistoryChart({ eloHistory, playerName = "ELO", color = "#f973
                 height={36}
                 content={({ payload }) => (
                   <div className="flex items-center justify-center gap-2">
-                    {payload?.map((entry: any) => (
+                    {payload?.map((entry: { value: string; color: string }) => (
                       <div key={entry.value} className="flex items-center gap-2">
                         <div
                           className="h-2 w-2 rounded-full"

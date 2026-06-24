@@ -41,8 +41,9 @@ export function FriendList({ refreshTrigger, onRefresh }: FriendListProps) {
         const data = await res.json();
         setFriends(data);
       }
-    } catch (error) {
-      console.error("Error fetching friends:", error);
+    } catch (_error) {
+      setLoading(false);
+      return;
     } finally {
       setLoading(false);
     }
@@ -63,8 +64,7 @@ export function FriendList({ refreshTrigger, onRefresh }: FriendListProps) {
         const data = await res.json();
         toast.error(data.error || "Fehler beim Entfernen");
       }
-    } catch (error) {
-      console.error("Error removing friend:", error);
+    } catch (_error) {
       toast.error("Fehler beim Entfernen");
     }
   };

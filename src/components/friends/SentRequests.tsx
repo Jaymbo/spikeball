@@ -41,8 +41,9 @@ export function SentRequests({ refreshTrigger, onRefresh }: SentRequestsProps) {
         const data = await res.json();
         setRequests(data);
       }
-    } catch (error) {
-      console.error("Error fetching sent friend requests:", error);
+    } catch (_error) {
+      setLoading(false);
+      return;
     } finally {
       setLoading(false);
     }
@@ -63,8 +64,7 @@ export function SentRequests({ refreshTrigger, onRefresh }: SentRequestsProps) {
         const data = await res.json();
         toast.error(data.error || "Fehler beim Abbrechen");
       }
-    } catch (error) {
-      console.error("Error canceling friend request:", error);
+    } catch (_error) {
       toast.error("Fehler beim Abbrechen");
     }
   };

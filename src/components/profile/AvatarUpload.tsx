@@ -130,8 +130,7 @@ export function AvatarUpload({ playerId, currentImage, onSuccess }: AvatarUpload
       
       const croppedUrl = URL.createObjectURL(croppedBlob);
       setCroppedImageUrl(croppedUrl);
-    } catch (error) {
-      console.error('Crop error:', error);
+    } catch (_error) {
       toast.error('Crop fehlgeschlagen');
     }
   };
@@ -177,8 +176,7 @@ export function AvatarUpload({ playerId, currentImage, onSuccess }: AvatarUpload
         const error = await res.json();
         toast.error(error.error || "Upload fehlgeschlagen");
       }
-    } catch (error) {
-      console.error("Upload error:", error);
+    } catch (_error) {
       toast.error("Upload fehlgeschlagen");
     } finally {
       setUploading(false);

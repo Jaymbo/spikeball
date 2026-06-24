@@ -153,10 +153,10 @@ export function processGameElo(
   team2Score: number,
   totalPlayers: number  // Total players in leaderboard for participation bonus
 ): {
-  team1Player1: { newRating: number; change: number; breakdown: any };
-  team1Player2: { newRating: number; change: number; breakdown: any };
-  team2Player1: { newRating: number; change: number; breakdown: any };
-  team2Player2: { newRating: number; change: number; breakdown: any };
+  team1Player1: { newRating: number; change: number; breakdown: EloBreakdown };
+  team1Player2: { newRating: number; change: number; breakdown: EloBreakdown };
+  team2Player1: { newRating: number; change: number; breakdown: EloBreakdown };
+  team2Player2: { newRating: number; change: number; breakdown: EloBreakdown };
 } {
   const team1Avg = (players.team1Player1.eloRating + players.team1Player2.eloRating) / 2;
   const team2Avg = (players.team2Player1.eloRating + players.team2Player2.eloRating) / 2;

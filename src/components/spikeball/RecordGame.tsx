@@ -3,22 +3,13 @@
 import { useState } from "react";
 import {
   Swords,
-  Users,
   ArrowRight,
   RotateCcw,
-  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -51,7 +42,16 @@ export default function RecordGame({ players, onGameRecorded }: RecordGameProps)
   const [team2Score, setTeam2Score] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [recentGames, setRecentGames] = useState<any[]>([]);
+  const [recentGames, setRecentGames] = useState<Array<{
+    id: string;
+    team1Player1Id: string;
+    team1Player2Id: string;
+    team2Player1Id: string;
+    team2Player2Id: string;
+    team1Score: number;
+    team2Score: number;
+    eloChanges?: Array<{ playerId: string; change: number }>;
+  }>>([]);
   
   // Display names for selected players
   const [team1Player1Name, setTeam1Player1Name] = useState("");
@@ -182,8 +182,10 @@ export default function RecordGame({ players, onGameRecorded }: RecordGameProps)
 
   const getPlayerName = (id: string) => players.find((p) => p.id === id)?.name ?? "?";
 
-  const getEloChangeForPlayer = (game: any, playerId: string) => {
-    const change = game.eloChanges?.find((c: any) => c.playerId === playerId);
+  const getEloChangeForPlayer = (game: {
+    eloChanges?: Array<{ playerId: string; change: number }>;
+  }, playerId: string) => {
+    const change = game.eloChanges?.find((c) => c.playerId === playerId);
     return change;
   };
 
