@@ -584,7 +584,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
                       <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />
                     )}
                     <span className="flex items-center gap-1">
-                      {trend.change >= 0 ? "+" : ""}{trend.change.toFixed(1)}
+                      {trend.change >= 0 ? "+" : ""}{Number(trend.change).toFixed(1)}
                       {trend.gamesCount > 1 && (
                         <span className="text-xs text-muted-foreground hidden sm:inline">
                           ({trend.gamesCount} Spiele)
