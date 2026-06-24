@@ -30,6 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface GameHistoryProps {
   onRefreshTrigger: number;
   onGameDeleted: () => void;
+  isAdmin: boolean;
 }
 
 interface GameEntry {
@@ -61,7 +62,7 @@ function formatDate(dateStr: string): string {
   });
 }
 
-export default function GameHistory({ onRefreshTrigger, onGameDeleted }: GameHistoryProps) {
+export default function GameHistory({ onRefreshTrigger, onGameDeleted, isAdmin }: GameHistoryProps) {
   const [games, setGames] = useState<GameEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -263,18 +264,20 @@ export default function GameHistory({ onRefreshTrigger, onGameDeleted }: GameHis
                       <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
                     )}
 
-                    {/* Delete */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-muted-foreground hover:text-destructive shrink-0 h-8 w-8"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteConfirmId(game.id);
-                      }}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    {/* Delete - nur für Admins */}
+                    {isAdmin && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive shrink-0 h-8 w-8"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteConfirmId(game.id);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                   </div>
 
                   {/* Expanded details */}

@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
         username: user2.username,
         playerName: user2.player.name,
         eloRating: user2.player.eloRating,
-        wins: user2.wins,
+        wins: user2.player.wins,
         losses: user2.player.losses,
         gamesPlayed: user2.player.gamesPlayed,
         winRate: user2.player.gamesPlayed > 0 ? 

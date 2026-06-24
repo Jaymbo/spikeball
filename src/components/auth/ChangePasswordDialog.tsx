@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ interface ChangePasswordDialogProps {
 
 export function ChangePasswordDialog({ open, isFirstLogin = false, onSuccess, onOpenChange }: ChangePasswordDialogProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
@@ -68,10 +70,8 @@ export function ChangePasswordDialog({ open, isFirstLogin = false, onSuccess, on
       onSuccess?.();
       onOpenChange?.(false);
       router.refresh();
-      setIsLoading(false);
-    } catch (error) {
+    } catch (_error) {
       toast.error('Fehler beim Ändern des Passworts');
-      setIsLoading(false);
     }
   };
 

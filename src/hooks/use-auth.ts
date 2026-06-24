@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface User {
@@ -46,10 +47,13 @@ export function useAuth() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth'] });
-      queryClient.clear();
+      queryClient.removeQueries({ queryKey: ['auth'] });
     },
   });
+
+  const invalidateAuth = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['auth'] });
+  }, [queryClient]);
 
   return {
     user,
@@ -57,5 +61,6 @@ export function useAuth() {
     isAuthenticated: !!user,
     error,
     logout: logoutMutation.mutate,
+    invalidateAuth,
   };
 }

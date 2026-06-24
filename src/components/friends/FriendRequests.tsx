@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import SearchInput from "@/components/ui/search-input";
-import { useFriendRequestMutation } from "@/hooks/use-friends";
+import { useFriendRequestMutation, useInvalidateFriends } from "@/hooks/use-friends";
 
 interface FriendRequest {
   id: string;
@@ -29,6 +29,7 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const friendRequestMutation = useFriendRequestMutation();
+  const invalidateFriends = useInvalidateFriends();
 
   useEffect(() => {
     fetchRequests();
@@ -56,6 +57,7 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
       const updated = requests.filter((r) => r.id !== id);
       setRequests(updated);
       onPendingCountChange?.(updated.length);
+      invalidateFriends();
       onRefresh?.();
     } catch (error) {
       console.error("Error accepting friend request:", error);
@@ -70,6 +72,7 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
       const updated = requests.filter((r) => r.id !== id);
       setRequests(updated);
       onPendingCountChange?.(updated.length);
+      invalidateFriends();
     } catch (error) {
       console.error("Error rejecting friend request:", error);
       toast.error("Fehler beim Ablehnen");
@@ -126,7 +129,7 @@ export function FriendRequests({ refreshTrigger, onRefresh, onPendingCountChange
 
       {filteredRequests.length === 0 ? (
         <div className="text-center text-muted-foreground py-8">
-          <p>Keine Ergebnisse für "{searchQuery}"</p>
+          <p>Keine Ergebnisse für &quot;{searchQuery}&quot;</p>
         </div>
       ) : (
         filteredRequests.map((request) => (

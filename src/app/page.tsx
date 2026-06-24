@@ -35,16 +35,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { usePlayers, useInvalidatePlayers } from "@/hooks/use-players";
 import { usePendingFriendRequests } from "@/hooks/use-friends";
 
-interface Player {
-  id: string;
-  name: string;
-  eloRating: number;
-  gamesPlayed: number;
-  wins: number;
-  losses: number;
-  lastPlayedAt: string | null;
-}
-
 export default function SpikeballPage() {
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("leaderboard");
@@ -54,7 +44,7 @@ export default function SpikeballPage() {
   const [themeReady, setThemeReady] = useState(false);
 
   // React Query Hooks - ersetzen das Polling
-  const { user, isLoading: isAuthLoading, isAuthenticated, logout } = useAuth();
+  const { user, isLoading: isAuthLoading, logout, invalidateAuth } = useAuth();
   const { data: players = [], isLoading: isPlayersLoading } = usePlayers();
   const { data: pendingData } = usePendingFriendRequests();
   const invalidatePlayers = useInvalidatePlayers();
@@ -339,6 +329,7 @@ export default function SpikeballPage() {
               <GameHistory
                 onRefreshTrigger={0}
                 onGameDeleted={handleGameRecorded}
+                isAdmin={user.isAdmin}
               />
             ) : (
               <div className="border rounded-lg p-8 text-center">
@@ -432,7 +423,7 @@ export default function SpikeballPage() {
         open={authModalOpen}
         onOpenChange={setAuthModalOpen}
         onSuccess={async () => {
-          // React Query wird automatisch neu laden
+          invalidateAuth();
         }}
       />
 
@@ -442,6 +433,7 @@ export default function SpikeballPage() {
         onOpenChange={setShowPasswordDialog}
         onSuccess={() => {
           setShowPasswordDialog(false);
+          invalidateAuth();
         }}
       />
     </div>

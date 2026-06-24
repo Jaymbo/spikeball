@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -85,12 +86,13 @@ export async function GET(
       }
     }) !== null;
 
-    const friendRequestStatus = await db.friendship.findFirst({
+    const friendRequest = await db.friendship.findFirst({
       where: {
         requesterId: currentUser.userId,
         receiverId: id
       }
-    })?.status || null;
+    });
+    const friendRequestStatus = friendRequest?.status ?? null;
 
     // Time range filter for games
     const timeRange = req.nextUrl.searchParams.get("timeRange") || "allTime";
@@ -104,34 +106,28 @@ export async function GET(
       startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
     }
 
-    const gamesQuery: any = {
-      where: {
-        OR: [
-          { team1Player1Id: player.id },
-          { team1Player2Id: player.id },
-          { team2Player1Id: player.id },
-          { team2Player2Id: player.id }
-        ]
-      },
-      orderBy: { playedAt: "desc" },
+    const where: Prisma.GameWhereInput = {
+      OR: [
+        { team1Player1Id: player.id },
+        { team1Player2Id: player.id },
+        { team2Player1Id: player.id },
+        { team2Player2Id: player.id }
+      ],
+      ...(startDate && { playedAt: { gte: startDate } }),
+    };
+
+    const games = await db.game.findMany({
+      where,
+      orderBy: { playedAt: "asc" },
       include: {
         eloChanges: {
           where: { playerId: player.id }
         }
       }
-    };
-
-    if (startDate) {
-      gamesQuery.where.playedAt = { gte: startDate };
-    }
-
-    const games = await db.game.findMany({
-      ...gamesQuery,
-      orderBy: { playedAt: "asc" }
     });
 
     // Calculate ELO history
-    const eloHistory = games.map((game, index) => {
+    const eloHistory = games.map((game) => {
       const eloChange = game.eloChanges.find((e) => e.playerId === player.id);
       return {
         date: game.playedAt,

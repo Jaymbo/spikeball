@@ -5,10 +5,11 @@ import path from "path";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
-    const imagePath = params.path.join("/");
+    const { path: pathArray } = await params;
+    const imagePath = pathArray.join("/");
     const fullPath = path.join(process.cwd(), "public", imagePath);
 
     // Prüfen, ob Datei existiert

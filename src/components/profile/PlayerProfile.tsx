@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Trophy, Calendar, History, TrendingUp, UserPlus, UserCheck, Clock, UserMinus, X, Settings, LineChart, ArrowRight, Users, Plus, Search } from "lucide-react";
+import { Trophy, Calendar, History, TrendingUp, TrendingDown, UserPlus, UserCheck, Clock, UserMinus, X, Settings, LineChart, ArrowRight, Users, Plus, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AvatarUpload } from "./AvatarUpload";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ import { ProfileSettingsDialog } from "./ProfileSettingsDialog";
 import { EloComparisonChart } from "./EloComparisonChart";
 import { EloHistoryChart } from "./EloHistoryChart";
 import { getCurrentUser } from "@/lib/auth";
+import { useInvalidateFriends } from "@/hooks/use-friends";
 
 interface PlayerProfileProps {
   playerId: string;
@@ -45,6 +46,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
   const [friendshipId, setFriendshipId] = useState<string | null>(null);
   const [friendRequestLoading, setFriendRequestLoading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null); // For friend operations
+  const invalidateFriends = useInvalidateFriends();
 
   // Comparison state
   const [comparePlayers, setComparePlayers] = useState<PlayerEloData[]>([]);
@@ -205,6 +207,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
 
       toast.success("Freundschaftsanfrage gesendet!");
       setFriendRequestType("outgoing");
+      invalidateFriends();
       // Refresh data to get updated status
       await fetchPlayerData();
     } catch (err) {
@@ -237,6 +240,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
         toast.success("Freundschaft angenommen!");
         setFriendRequestType("accepted");
         setIsFriend(true);
+        invalidateFriends();
         await fetchPlayerData();
       } else {
         throw new Error("Annehmen fehlgeschlagen");
@@ -265,6 +269,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       if (rejectRes.ok) {
         toast.success("Anfrage abgelehnt");
         setFriendRequestType(null);
+        invalidateFriends();
         await fetchPlayerData();
       } else {
         throw new Error("Ablehnen fehlgeschlagen");
@@ -293,6 +298,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
       if (cancelRes.ok) {
         toast.success("Anfrage zurückgezogen");
         setFriendRequestType(null);
+        invalidateFriends();
         await fetchPlayerData();
       } else {
         throw new Error("Zurückziehen fehlgeschlagen");
@@ -322,6 +328,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
         toast.success("Freund entfernt");
         setFriendRequestType(null);
         setIsFriend(false);
+        invalidateFriends();
         await fetchPlayerData();
       } else {
         throw new Error("Entfernen fehlgeschlagen");
@@ -443,6 +450,29 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
     ? ((player.wins / player.gamesPlayed) * 100).toFixed(1) 
     : "0.0";
 
+  // Berechne Trend basierend auf letzten 5 Spielen (statt nur letztem Spiel)
+  const trend = (() => {
+    if (!eloHistory || eloHistory.length === 0) return { change: 0, isPositive: true, gamesCount: 0 };
+    
+    // Nimm letzte 5 Spiele
+    const recentGames = eloHistory.slice(0, Math.min(5, eloHistory.length));
+    
+    // Berechne durchschnittliche ELO-Änderung
+    const totalChange = recentGames.reduce((sum, e) => sum + (e.change || 0), 0);
+    const avgChange = totalChange / recentGames.length;
+    
+    // Bestimme Trend-Richtung basierend auf Durchschnitt
+    const isPositive = avgChange >= 0;
+    
+    // Zeige Gesamtänderung der letzten 5 Spiele
+    return { 
+      change: totalChange, 
+      isPositive,
+      gamesCount: recentGames.length,
+      avgChange 
+    };
+  })();
+
   // DEBUG: Log all friendship status values being used for rendering
   // console.log("[PlayerProfile rendering] State values:", {
   //   player: player.name,
@@ -462,7 +492,7 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
           <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-6">
             {/* Avatar Section */}
             <div className="relative mx-auto sm:mx-0">
-              <Avatar className="h-20 w-20 <sm:h-24 sm:w-24 border-4 border-background shadow-lg">
+              <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-background shadow-lg">
                 <AvatarImage src={player.profilePicture ? `/api/images${player.profilePicture}` : undefined} alt={player.name} />
                 <AvatarFallback className="text-2xl sm:text-3xl bg-gradient-to-br from-orange-400 to-orange-600 text-white">
                   {player.name.slice(0, 2).toUpperCase()}
@@ -546,11 +576,21 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
                 </div>
                 {(eloHistory.length > 0) && (
                   <div className={`text-xs sm:text-sm font-medium mt-1 flex items-center gap-1 justify-center sm:justify-end ${
-                    eloHistory[0].change >= 0 ? "text-green-600" : "text-red-600"
+                    trend.isPositive ? "text-emerald-600" : "text-rose-600"
                   }`}>
-                    <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
-                    {eloHistory[0].change >= 0 ? "+" : ""}
-                    {eloHistory[0].change.toFixed(1)}
+                    {trend.isPositive ? (
+                      <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
+                    ) : (
+                      <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />
+                    )}
+                    <span className="flex items-center gap-1">
+                      {trend.change >= 0 ? "+" : ""}{Number(trend.change).toFixed(1)}
+                      {trend.gamesCount > 1 && (
+                        <span className="text-xs text-muted-foreground hidden sm:inline">
+                          ({trend.gamesCount} Spiele)
+                        </span>
+                      )}
+                    </span>
                   </div>
                 )}
               </div>
@@ -826,29 +866,102 @@ export function PlayerProfile({ playerId, isOwnProfile = false, isAdmin = false,
                     const team1Score = isTeam1Player ? game.team1Score : game.team2Score;
                     const team2Score = isTeam1Player ? game.team2Score : game.team1Score;
                     const isWin = team1Score > team2Score;
+                    const isDraw = team1Score === team2Score;
+                    
+                    // Finde ELO-Change für diesen Spieler in diesem Spiel
+                    const playerEloChange = eloHistory.find(
+                      (e: any) => e.game?.id === game.id
+                    );
+                    const eloChange = playerEloChange?.change || 0;
                     
                     return (
                       <div 
                         key={game.id}
                         className={`p-3 sm:p-4 rounded-lg border ${
                           isWin 
-                            ? "bg-green-50/50 border-green-200" 
-                            : "bg-red-50/50 border-red-200"
+                            ? "bg-emerald-50/30 border-emerald-200/50 dark:bg-emerald-950/20 dark:border-emerald-900/50" 
+                            : isDraw
+                            ? "bg-gray-50/30 border-gray-200/50 dark:bg-gray-950/20 dark:border-gray-800/50"
+                            : "bg-rose-50/30 border-rose-200/50 dark:bg-rose-950/20 dark:border-rose-900/50"
                         }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <div className="px-2 py-1 rounded text-xs font-medium bg-gray-100">
-                            {new Date(game.playedAt).toLocaleDateString("de-DE")}
+                          <div className="flex items-center gap-2">
+                            <div className={`px-2 py-1 rounded text-xs font-medium ${
+                              isWin 
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-400"
+                                : isDraw
+                                ? "bg-gray-100 text-gray-700 dark:bg-gray-800/40 dark:text-gray-400"
+                                : "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-400"
+                            }`}>
+                              {isWin ? "Sieg" : isDraw ? "Unentschieden" : "Niederlage"}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(game.playedAt).toLocaleDateString("de-DE", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                              })}
+                            </div>
                           </div>
+                          {eloChange !== 0 && (
+                            <div className={`flex items-center gap-1 text-xs font-bold ${
+                              eloChange > 0 
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-rose-600 dark:text-rose-400"
+                            }`}>
+                              {eloChange > 0 ? (
+                                <TrendingUp className="h-3 w-3" />
+                              ) : (
+                                <TrendingDown className="h-3 w-3" />
+                              )}
+                              {eloChange > 0 ? "+" : ""}{eloChange.toFixed(1)} ELO
+                            </div>
+                          )}
                         </div>
                         <div className="text-center py-2">
                           <div className="inline-flex items-center gap-3 sm:gap-4 text-lg sm:text-xl font-bold">
-                            <span className={isWin ? "text-green-600" : ""}>
+                            <span className={`${
+                              isWin 
+                                ? "text-emerald-600 dark:text-emerald-400" 
+                                : isDraw
+                                ? "text-gray-600 dark:text-gray-400"
+                                : "text-muted-foreground"
+                            }`}>
                               {team1Score}
                             </span>
                             <span className="text-muted-foreground">:</span>
-                            <span className={!isWin ? "text-green-600" : ""}>
+                            <span className={`${
+                              !isWin && !isDraw
+                                ? "text-emerald-600 dark:text-emerald-400" 
+                                : isDraw
+                                ? "text-gray-600 dark:text-gray-400"
+                                : "text-muted-foreground"
+                            }`}>
                               {team2Score}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-border/50">
+                          <div className="flex flex-wrap justify-center gap-2 text-xs text-muted-foreground">
+                            <span>
+                              {game.team1Player1.name} {game.team1Player1.id === playerId ? "(Du)" : ""}
+                              {game.team1Player1.id === playerId && ` - ${game.team1Player1.eloRating} ELO`}
+                            </span>
+                            <span>&</span>
+                            <span>
+                              {game.team1Player2.name} {game.team1Player2.id === playerId ? "(Du)" : ""}
+                              {game.team1Player2.id === playerId && ` - ${game.team1Player2.eloRating} ELO`}
+                            </span>
+                            <span className="text-muted-foreground/50">vs</span>
+                            <span>
+                              {game.team2Player1.name} {game.team2Player1.id === playerId ? "(Du)" : ""}
+                              {game.team2Player1.id === playerId && ` - ${game.team2Player1.eloRating} ELO`}
+                            </span>
+                            <span>&</span>
+                            <span>
+                              {game.team2Player2.name} {game.team2Player2.id === playerId ? "(Du)" : ""}
+                              {game.team2Player2.id === playerId && ` - ${game.team2Player2.eloRating} ELO`}
                             </span>
                           </div>
                         </div>

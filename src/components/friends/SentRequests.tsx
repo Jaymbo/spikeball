@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import SearchInput from "@/components/ui/search-input";
+import { useInvalidateFriends } from "@/hooks/use-friends";
 
 interface SentRequest {
   id: string;
@@ -27,6 +28,7 @@ export function SentRequests({ refreshTrigger, onRefresh }: SentRequestsProps) {
   const [requests, setRequests] = useState<SentRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const invalidateFriends = useInvalidateFriends();
 
   useEffect(() => {
     fetchRequests();
@@ -55,6 +57,7 @@ export function SentRequests({ refreshTrigger, onRefresh }: SentRequestsProps) {
       if (res.ok) {
         toast.success("Anfrage abgebrochen");
         setRequests((prev) => prev.filter((r) => r.id !== id));
+        invalidateFriends();
         onRefresh?.();
       } else {
         const data = await res.json();
@@ -116,7 +119,7 @@ export function SentRequests({ refreshTrigger, onRefresh }: SentRequestsProps) {
 
       {filteredRequests.length === 0 ? (
         <div className="text-center text-muted-foreground py-8">
-          <p>Keine Ergebnisse für "{searchQuery}"</p>
+          <p>Keine Ergebnisse für &quot;{searchQuery}&quot;</p>
         </div>
       ) : (
         filteredRequests.map((request) => (

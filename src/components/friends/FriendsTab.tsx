@@ -10,15 +10,15 @@ import { Badge } from "@/components/ui/badge";
 import { UserCheck, Clock, Send } from "lucide-react";
 
 interface FriendsTabProps {
-  currentUser: {
-    id: string;
+  currentUser?: {
+    userId: string;
     username: string;
     isAdmin: boolean;
     requiresPasswordChange: boolean;
   };
 }
 
-export function FriendsTab({ currentUser }: FriendsTabProps) {
+export function FriendsTab({ currentUser: _ }: FriendsTabProps) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [pendingRequests, setPendingRequests] = useState(0);
 

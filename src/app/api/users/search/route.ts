@@ -17,8 +17,7 @@ export async function GET(req: NextRequest) {
     const users = await db.user.findMany({
       where: {
         username: {
-          contains: query,
-          mode: "insensitive"
+          contains: query
         }
       },
       take: 10,

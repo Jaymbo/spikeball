@@ -53,6 +53,9 @@ export const metadata: Metadata = {
     shortcut: "/favicon.png",
     apple: "/apple-touch-icon.png",
   },
+  verification: {
+    google: '4srOQszXNlJ0b1JYxxiIAfcIHZhWEh46PFNL0urItuk',
+  },
 };
 
 export default function RootLayout({
@@ -62,10 +65,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de" suppressHydrationWarning className="dark">
-      <head>
-        <title>Startseite von Spikeball.ddns.net</title>
-        <meta name="google-site-verification" content="4srOQszXNlJ0b1JYxxiIAfcIHZhWEh46PFNL0urItuk" />
-      </head>
       <body
         className={`${interSans.variable} ${jetbrainsMono.variable} antialiased bg-background text-foreground`}
       >

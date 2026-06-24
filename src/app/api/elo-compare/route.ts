@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
             eloChanges: {
               orderBy: { createdAt: "desc" },
               take: 200, // Mehr Daten für Vergleich
+              include: { game: true },
             },
           },
         });
