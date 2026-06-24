@@ -70,10 +70,8 @@ export function ChangePasswordDialog({ open, isFirstLogin = false, onSuccess, on
       onSuccess?.();
       onOpenChange?.(false);
       router.refresh();
-      setIsLoading(false);
-    } catch (error) {
+    } catch (_error) {
       toast.error('Fehler beim Ändern des Passworts');
-      setIsLoading(false);
     }
   };
 

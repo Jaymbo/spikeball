@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userModel = (db as any).user;
+    const userModel = (db as unknown as any).user;
     if (!userModel) {
       return NextResponse.json(
         { error: "User model not available" },
@@ -231,7 +231,7 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      const userModel = (db as any).user;
+      const userModel = (db as unknown as any).user;
       if (userModel) {
         const existingUser = await userModel.findUnique({
           where: { username: trimmedName },

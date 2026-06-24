@@ -36,7 +36,6 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
       }
 
       const data = await res.json();
-      queryClient.invalidateQueries({ queryKey: ['auth'] });
 
       if (data.user.requiresPasswordChange) {
         // Redirect to password change
@@ -46,9 +45,8 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
         onSuccess?.();
         router.refresh();
       }
-    } catch (error) {
+    } catch (_error) {
       toast.error('Anmeldefehler');
-      setIsLoading(false);
     }
   };
 
@@ -86,12 +84,10 @@ export function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
       setPassword('');
       setPasswordConfirm('');
       setShowRegister(false);
-      queryClient.invalidateQueries({ queryKey: ['auth'] });
       onSuccess?.();
       router.refresh();
-    } catch (error) {
+    } catch (_error) {
       toast.error('Registrierungsfehler');
-      setIsLoading(false);
     }
   };
 

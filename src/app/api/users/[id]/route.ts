@@ -127,7 +127,7 @@ export async function GET(
     });
 
     // Calculate ELO history
-    const eloHistory = games.map((game, index) => {
+    const eloHistory = games.map((game) => {
       const eloChange = game.eloChanges.find((e) => e.playerId === player.id);
       return {
         date: game.playedAt,

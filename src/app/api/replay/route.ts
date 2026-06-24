@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { processGameElo, calculateGlobalRanks } from "@/lib/elo";
 
 /**
@@ -7,7 +7,7 @@ import { processGameElo, calculateGlobalRanks } from "@/lib/elo";
  * Reset all player ratings to 1000 and replays all games chronologically
  * This recalculates ELO ratings from scratch based on game history
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Get all games sorted chronologically
     const games = await db.game.findMany({
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
 
     await db.$transaction(async (tx) => {
       // Step 1: Reset all players to initial state
-      const updatedPlayers = await tx.player.updateMany({
+      await tx.player.updateMany({
         data: {
           eloRating: 1000,
           gamesPlayed: 0,

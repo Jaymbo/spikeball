@@ -14,7 +14,7 @@ export default function ComparePage() {
   const [loading, setLoading] = useState(false);
   const { data: players = [] } = usePlayers();
 
-  const addPlayer = async (playerId: string, playerName: string) => {
+  const addPlayer = async (playerId: string, _playerName: string) => {
     // Check if player already selected
     if (selectedPlayers.some(p => p.playerId === playerId)) {
       toast.error("Dieser Spieler ist bereits ausgewählt");
