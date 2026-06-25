@@ -37,12 +37,14 @@ export default function ComparePage() {
 
       const data = await res.json();
       
-      setSelectedPlayers(prev => [...prev, {
+      const newPlayerData: PlayerEloData = {
         playerId: data.player.id,
         playerName: data.player.name,
         eloHistory: data.eloHistory,
         color: "#3b82f6",
-      }]);
+      };
+      
+      setSelectedPlayers(prev => [...prev, newPlayerData]);
 
       toast.success(`${data.player.name} hinzugefügt`);
     } catch (error) {

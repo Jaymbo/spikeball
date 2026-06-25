@@ -17,6 +17,10 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+// Force dynamic rendering to avoid Next.js 15 static generation bug with error pages
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export const metadata: Metadata = {
   metadataBase: new URL('https://spikeball.ddns.net'),
   title: {
